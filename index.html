@@ -491,6 +491,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <div class="t">Load a job kit</div>
         <div class="d">Send multiple items out</div>
       </button>
+      <button class="quick-btn" onclick="openBulkMove()">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4-4 4 4M9 5v14M15 15l4 4 4-4M19 19V5"/></svg></div>
+        <div class="t">Move equipment</div>
+        <div class="d">Load a van, or move several at once</div>
+      </button>
       <button class="quick-btn" onclick="switchView('inventory')">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
         <div class="t">Find equipment</div>
@@ -505,6 +510,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
         <div class="t">Manage team</div>
         <div class="d">Add or remove personnel</div>
+      </button>
+      <button class="quick-btn" onclick="openLocations()">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
+        <div class="t">Manage locations</div>
+        <div class="d">Vans, trailers, shop areas</div>
       </button>
     </div>
 
@@ -712,6 +722,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <input list="techListIn" id="inTech" placeholder="e.g. Miguel Perez">
     <datalist id="techListIn"></datalist>
     <div class="hint">Doesn't have to be who checked it out — just whoever's bringing it back right now.</div>
+  </div>
+  <div class="field">
+    <label>Return to</label>
+    <select id="inLocation"></select>
+    <div class="hint">Where this is physically landing — the shop, a van, wherever it's actually going.</div>
   </div>
   <div class="field">
     <label>Condition on return</label>
@@ -932,6 +947,66 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
 </div></div>
 
+<!-- Manage Locations -->
+<div class="overlay" id="modalLocations"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Manage locations</div><div class="sheet-sub">Vans, trailers, shop areas — anywhere equipment sits when it's not on a job</div></div>
+    <button class="close-x" onclick="closeModal('modalLocations')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="field">
+    <label>Add a location</label>
+    <div style="display:flex;gap:8px;">
+      <input id="locationNameInput" placeholder="e.g. Van 3, Trailer, Storage Unit" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmAddLocation();}">
+      <button class="btn btn-cyan" style="width:auto;padding:0 18px;" onclick="confirmAddLocation()">Add</button>
+    </div>
+  </div>
+  <div class="section-title" style="margin-top:6px;">Current locations (<span id="locationCount">0</span>)</div>
+  <div id="locationList"></div>
+  <div class="hint" style="margin-top:10px;">"Shop" is built in and can't be removed. Removing a location here doesn't move any equipment currently sitting there — reassign those items first from their detail page.</div>
+</div></div>
+
+<!-- Move item -->
+<div class="overlay" id="modalMove"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Move</div><div class="sheet-sub" id="moveSub">—</div></div>
+    <button class="close-x" onclick="closeModal('modalMove')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="field">
+    <label>Move to</label>
+    <select id="moveDest"></select>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-cyan" onclick="confirmMove()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      Confirm move
+    </button>
+  </div>
+</div></div>
+
+<!-- Bulk Move (multiple items to a van/shop/location at once) -->
+<div class="overlay" id="modalBulkMove"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Move equipment</div><div class="sheet-sub">Send multiple items to a van, the shop, or anywhere else at once</div></div>
+    <button class="close-x" onclick="closeModal('modalBulkMove')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="field">
+    <label>Move to</label>
+    <select id="bulkMoveDest"></select>
+  </div>
+  <div class="field">
+    <label>Select equipment</label>
+    <input placeholder="Filter list..." oninput="renderBulkMoveList(this.value)" style="margin-bottom:8px;">
+    <div class="kit-list" id="bulkMoveList"></div>
+  </div>
+  <div class="kit-selected-bar">
+    <div class="hint" id="bulkMoveCount" style="margin-bottom:8px;">0 items selected</div>
+    <button class="btn btn-cyan" style="width:100%;" onclick="confirmBulkMove()">Move selected items</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="toastMsg"></span></div>
 
 <script>
@@ -956,11 +1031,14 @@ let activityLog = [];
 let jobsitesKnown = new Set();
 let personnel = [...KNOWN_TECHS];
 let techsKnown = new Set(KNOWN_TECHS);
+let customLocations = ["Van 1", "Van 2", "Misc"];
+let backendSupportsLocations = true;
 let currentDetailId = null;
 let scanStream = null;
 let scanRAF = null;
 let scanMode = 'lookup'; // 'lookup' | 'clientReturn'
 let kitSelected = new Set();
+let bulkMoveSelected = new Set();
 let currentView = 'home';
 let lastLoadOk = false;
 
@@ -981,6 +1059,17 @@ function fmtDate(s){
 }
 function isOverdue(item){
   return item.status==='Jobsite' && item.expectedReturnDate && item.expectedReturnDate < todayStr();
+}
+// Every place equipment can sit when it's not checked out to a job: the
+// built-in Shop plus whatever vans/trailers/etc. have been added.
+function homeLocations(){ return ["Shop", ...customLocations]; }
+function isHomeStatus(status){ return homeLocations().includes(status); }
+function daysOut(item){
+  if(!item.checkedOutDate) return null;
+  const out = new Date(item.checkedOutDate+"T00:00:00");
+  if(isNaN(out)) return null;
+  const diffMs = new Date(todayStr()+"T00:00:00") - out;
+  return Math.max(0, Math.round(diffMs / 86400000));
 }
 
 function setSyncing(on, failed){
@@ -1031,6 +1120,15 @@ async function loadData(silent){
       }
     } else {
       (data.clients||[]).forEach(c=>{ if(c.name) clientAddresses[c.name] = c.address||''; });
+    }
+
+    backendSupportsLocations = data.locations!==undefined;
+    if(backendSupportsLocations){
+      customLocations = (data.locations && data.locations.length) ? data.locations : ["Van 1","Van 2","Misc"];
+      if(!data.locations || !data.locations.length){ await saveLocations(); }
+    } else if(!window._warnedNoLocationsBackend){
+      window._warnedNoLocationsBackend = true;
+      showToast('Custom locations are saved on this device only — update your Apps Script backend to sync them');
     }
 
     jobsitesKnown = new Set();
@@ -1089,6 +1187,13 @@ async function saveClientAddresses(){
     setSyncing(false);
   }catch(e){ console.error('save client addresses failed', e); setSyncing(false, true); }
 }
+async function saveLocations(){
+  setSyncing(true);
+  try{
+    await apiPost('saveLocations', customLocations);
+    setSyncing(false);
+  }catch(e){ console.error('save locations failed', e); setSyncing(false, true); }
+}
 
 async function saveInventory(){
   setSyncing(true);
@@ -1146,11 +1251,12 @@ function renderAll(){
   renderActivity();
   renderReports();
   renderTeam();
+  renderLocations();
   renderClientsList();
 }
 
 function renderStats(){
-  const shop = inventory.filter(i=>i.status==='Shop').length;
+  const shop = inventory.filter(i=>isHomeStatus(i.status)).length;
   const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
   const overdue = inventory.filter(isOverdue).length;
   document.getElementById('statRow').innerHTML = `
@@ -1210,15 +1316,39 @@ function renderClientsList(){
     wrap.innerHTML = `<div class="empty">${q? `No matches for "${q}".` : jobsCategory==='active' ? 'No active jobs right now.' : 'No completed jobs yet.'}</div>`;
     return;
   }
-  wrap.innerHTML = filtered.map(r=>`
-    <div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
-      <div class="ribbon" style="background:${r.items.length>0?'var(--blue)':'var(--gray)'}"></div>
+  wrap.innerHTML = filtered.map(r=>{
+    if(r.items.length===0){
+      return `<div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
+        <div class="ribbon" style="background:var(--gray)"></div>
+        <div class="body">
+          <div class="id">${escapeHtml(r.name)}</div>
+          <div class="meta"><span class="badge shop">All returned</span></div>
+        </div>
+        <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>`;
+    }
+    // Per-equipment-type breakdown, e.g. "3 Dehumidifiers · 12 Air Movers · 2 Air Scrubbers"
+    const byType = {};
+    r.items.forEach(it=>{ byType[it.type] = (byType[it.type]||0) + 1; });
+    const typeLine = Object.keys(byType).sort().map(t=>`${byType[t]} ${t}${byType[t]!==1?'s':''}`).join(' · ');
+    // Days out = since the earliest item on this job went out
+    const outDates = r.items.map(it=>it.checkedOutDate).filter(Boolean).sort();
+    const maxDays = outDates.length ? daysOut({checkedOutDate: outDates[0]}) : null;
+    const overdueCount = r.items.filter(isOverdue).length;
+    const ribbon = overdueCount>0 ? 'var(--red)' : 'var(--blue)';
+    return `<div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
+      <div class="ribbon" style="background:${ribbon}"></div>
       <div class="body">
-        <div class="id">${escapeHtml(r.name)}</div>
-        <div class="meta">${r.items.length>0? `<span class="badge jobsite">${r.items.length} item${r.items.length!==1?'s':''} out</span>` : `<span class="badge shop">All returned</span>`}</div>
+        <div class="id">${escapeHtml(r.name)}${overdueCount>0? ` <span class="badge overdue" style="margin-left:4px;">⚠ ${overdueCount} overdue</span>`:''}</div>
+        <div class="meta">
+          <span class="badge jobsite">${r.items.length} item${r.items.length!==1?'s':''} out</span>
+          ${maxDays!==null? `<span class="badge ${maxDays>7?'overdue':'shop'}">${maxDays} day${maxDays!==1?'s':''} out</span>`:''}
+        </div>
+        <div class="meta" style="margin-top:3px;color:var(--muted);">${escapeHtml(typeLine)}</div>
       </div>
       <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function openClientDetail(name){
   currentClientName = name;
@@ -1461,6 +1591,7 @@ function openBulkCheckinForClient(){
   document.getElementById('inCondition').value = 'Good';
   document.getElementById('inNotes').value = '';
   document.getElementById('inBulkHint').style.display = 'block';
+  populateInLocation();
   toggleMaintWarn();
   openModal('modalIn');
 }
@@ -1564,21 +1695,23 @@ function printClientReport(){
 function saveClientReport(){ guideToSaveAsPDF(printClientReport); }
 
 /* ============ RENDER: INVENTORY ============ */
-const STATUS_FILTERS = ['all','Shop','Jobsite','overdue','Maintenance','Missing','Retired'];
+function statusFilters(){ return ['all','Shop', ...customLocations, 'Jobsite','overdue','Maintenance','Missing','Retired']; }
 let activeStatusFilter = 'all';
 function setStatusFilter(f){ activeStatusFilter=f; renderInventory(); }
 
 function renderInventory(){
   const chipWrap = document.getElementById('statusChips');
+  const filters = statusFilters();
   const labels = {all:'All',Shop:'Shop',Jobsite:'On job',overdue:'Overdue',Maintenance:'Maintenance',Missing:'Missing',Retired:'Retired'};
-  chipWrap.innerHTML = STATUS_FILTERS.map(f=>`<div class="chip ${f===activeStatusFilter?'active':''}" onclick="setStatusFilter('${f}')">${labels[f]}</div>`).join('');
+  const labelFor = f => labels[f] || f; // custom locations use their own name as the label
+  chipWrap.innerHTML = filters.map(f=>`<div class="chip ${f===activeStatusFilter?'active':''}" onclick="setStatusFilter('${f.replace(/'/g,"\\'")}')">${escapeHtml(labelFor(f))}</div>`).join('');
 
   const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
   let items = inventory.filter(it=>{
     if(activeStatusFilter==='overdue'){ if(!isOverdue(it)) return false; }
     else if(activeStatusFilter!=='all' && it.status!==activeStatusFilter) return false;
     if(!q) return true;
-    return [it.id,it.type,it.model,it.jobsite,it.tech,it.serial].join(' ').toLowerCase().includes(q);
+    return [it.id,it.type,it.model,it.jobsite,it.tech,it.serial,it.barcode].join(' ').toLowerCase().includes(q);
   });
 
   const groups = {};
@@ -1604,7 +1737,7 @@ function renderInventory(){
 
 function ribbonColor(it){
   if(isOverdue(it)) return 'var(--red)';
-  if(it.status==='Shop') return 'var(--green)';
+  if(isHomeStatus(it.status)) return 'var(--green)';
   if(it.status==='Jobsite') return 'var(--blue)';
   if(it.status==='Maintenance') return 'var(--amber)';
   if(it.status==='Missing') return 'var(--red)';
@@ -1612,15 +1745,17 @@ function ribbonColor(it){
 }
 function badgeHTML(it){
   if(isOverdue(it)) return `<span class="badge overdue">Overdue</span>`;
-  const map={Shop:'shop',Jobsite:'jobsite',Maintenance:'maintenance',Missing:'missing',Retired:'retired'};
-  return `<span class="badge ${map[it.status]||'shop'}">${it.status}</span>`;
+  const map={Jobsite:'jobsite',Maintenance:'maintenance',Missing:'missing',Retired:'retired'};
+  const cls = isHomeStatus(it.status) ? 'shop' : (map[it.status]||'shop');
+  return `<span class="badge ${cls}">${escapeHtml(it.status)}</span>`;
 }
 function eqCardHTML(it){
   let metaLine = '';
   if(it.status==='Jobsite') metaLine = `${it.jobsite||'Unknown site'} · ${it.tech||'Unassigned'} · back ${fmtDate(it.expectedReturnDate)}`;
   else if(it.status==='Maintenance') metaLine = `In maintenance${it.notes? ' · '+it.notes:''}`;
   else if(it.status==='Missing') metaLine = `Reported missing${it.notes? ' · '+it.notes:''}`;
-  else metaLine = `In shop · ${it.condition||'Good'} condition`;
+  else if(isHomeStatus(it.status)) metaLine = `${it.status==='Shop'?'In shop':'In '+it.status} · ${it.condition||'Good'} condition`;
+  else metaLine = `${it.condition||'Good'} condition`;
   return `<div class="eq-card" onclick="openDetail('${it.id}')">
     <div class="ribbon" style="background:${ribbonColor(it)}"></div>
     <div class="body">
@@ -1641,7 +1776,7 @@ function typeIcon(type){
 function renderActivity(){
   const list = document.getElementById('activityList');
   if(activityLog.length===0){ list.innerHTML = `<div class="empty">No activity yet</div>`; return; }
-  const dotColor = a=>({checkout:'var(--blue)',checkin:'var(--green)',maintenance:'var(--amber)',missing:'var(--red)',added:'var(--cyan)',retired:'var(--gray)'}[a]||'var(--muted)');
+  const dotColor = a=>({checkout:'var(--blue)',checkin:'var(--green)',maintenance:'var(--amber)',missing:'var(--red)',added:'var(--cyan)',retired:'var(--gray)',moved:'var(--cyan-dark)'}[a]||'var(--muted)');
   const verb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',missing:'reported missing',added:'added to inventory',retired:'retired'}[a]||a);
   list.innerHTML = activityLog.slice(0,80).map(a=>{
     const time = new Date(a.ts);
@@ -1747,7 +1882,7 @@ function generateFleetReportHtml(){
     <div class="report-meta">Generated ${fmtDate(todayStr())} &middot; ${escapeHtml(currentReportSelectionLabel())}</div>`;
 
   if(include('fleetoverview')){
-    const shop = inventory.filter(i=>i.status==='Shop').length;
+    const shop = inventory.filter(i=>isHomeStatus(i.status)).length;
     const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
     const missing = inventory.filter(i=>i.status==='Missing').length;
     html += `<div class="report-section">
@@ -1789,7 +1924,7 @@ function generateFleetReportHtml(){
     inventory.forEach(it=>{
       const t = byType[it.type] = byType[it.type] || {total:0, shop:0, job:0};
       t.total++;
-      if(it.status==='Shop') t.shop++;
+      if(isHomeStatus(it.status)) t.shop++;
       else if(it.status==='Jobsite') t.job++;
     });
     html += `<div class="report-section"><div class="report-h">By Equipment Type</div><ul>`;
@@ -1823,7 +1958,7 @@ function renderReports(){
   const statWrap = document.getElementById('reportStatRow');
   if(!statWrap) return; // view not in DOM yet on first paint
 
-  const shop = inventory.filter(i=>i.status==='Shop').length;
+  const shop = inventory.filter(i=>isHomeStatus(i.status)).length;
   const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
   const maint = inventory.filter(i=>i.status==='Maintenance').length;
   const missing = inventory.filter(i=>i.status==='Missing').length;
@@ -1868,7 +2003,7 @@ function renderReports(){
   inventory.forEach(it=>{
     const t = byType[it.type] = byType[it.type] || {total:0, shop:0, job:0, maint:0};
     t.total++;
-    if(it.status==='Shop') t.shop++;
+    if(isHomeStatus(it.status)) t.shop++;
     else if(it.status==='Jobsite') t.job++;
     else if(it.status==='Maintenance') t.maint++;
   });
@@ -1946,7 +2081,7 @@ function openDetail(id){
   document.getElementById('dGrid').innerHTML = `
     <div class="detail-box"><div class="l">Status</div><div class="v">${it.status}</div></div>
     <div class="detail-box"><div class="l">Condition</div><div class="v">${it.condition||'—'}</div></div>
-    <div class="detail-box"><div class="l">${it.status==='Jobsite'?'Job site':'Location'}</div><div class="v">${it.status==='Jobsite' ? (it.jobsite||'—') : (it.status==='Shop'||it.status==='Maintenance') ? SHOP_ADDRESS : '—'}</div></div>
+    <div class="detail-box"><div class="l">${it.status==='Jobsite'?'Job site':'Location'}</div><div class="v">${it.status==='Jobsite' ? (it.jobsite||'—') : it.status==='Shop' ? SHOP_ADDRESS : it.status==='Maintenance' ? SHOP_ADDRESS+' (maintenance)' : isHomeStatus(it.status) ? it.status : '—'}</div></div>
     <div class="detail-box"><div class="l">Assigned to</div><div class="v">${it.tech||'—'}</div></div>
     <div class="detail-box"><div class="l">Checked out</div><div class="v">${fmtDate(it.checkedOutDate)}</div></div>
     <div class="detail-box"><div class="l">Expected return</div><div class="v">${fmtDate(it.expectedReturnDate)}</div></div>
@@ -1954,8 +2089,11 @@ function openDetail(id){
     <div class="detail-box"><div class="l">Last maintenance</div><div class="v">${fmtDate(it.lastMaintenanceDate)}</div></div>
   `;
   let actions = '';
-  if(it.status==='Shop' || it.status==='Maintenance'){
+  if(isHomeStatus(it.status) || it.status==='Maintenance'){
     actions += `<button class="btn btn-cyan" onclick="openCheckout('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>Check out</button>`;
+  }
+  if(isHomeStatus(it.status)){
+    actions += `<button class="btn btn-ghost" onclick="openMove('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4-4 4 4M9 5v14M15 15l4 4 4-4M19 19V5"/></svg>Move</button>`;
   }
   if(it.status==='Jobsite'){
     actions += `<button class="btn btn-green" onclick="openCheckin('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Check in</button>`;
@@ -1972,7 +2110,7 @@ function openDetail(id){
 
   const hist = activityLog.filter(a=>a.id===id).slice(0,15);
   document.getElementById('dHistory').innerHTML = hist.length? hist.map(a=>{
-    const verb = ({checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',missing:'Reported missing',added:'Added to inventory',retired:'Retired'}[a.action]||a.action);
+    const verb = ({checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',missing:'Reported missing',added:'Added to inventory',retired:'Retired',moved:'Moved'}[a.action]||a.action);
     const time = new Date(a.ts);
     return `<div class="history-item"><div class="h-txt">${verb}${a.jobsite? ' — '+a.jobsite:''}</div><div class="h-time">${time.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div>`;
   }).join('') : `<div class="hint">No history yet.</div>`;
@@ -2004,7 +2142,7 @@ function prefillOutAddress(){
 async function confirmCheckout(){
   const it = inventory.find(i=>i.id===currentDetailId);
   if(!it) return;
-  if(it.status!=='Shop' && it.status!=='Maintenance'){
+  if(!isHomeStatus(it.status) && it.status!=='Maintenance'){
     showToast(`${it.id} is already checked out to ${it.jobsite||'a job'} — return it first`);
     closeModal('modalOut');
     renderAll();
@@ -2028,6 +2166,12 @@ async function confirmCheckout(){
 }
 
 /* ============ CHECK IN ============ */
+function populateInLocation(){
+  const sel = document.getElementById('inLocation');
+  if(!sel) return;
+  sel.innerHTML = homeLocations().map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  sel.value = 'Shop';
+}
 function openCheckin(id){
   currentDetailId = id;
   bulkCheckinIds = null;
@@ -2038,6 +2182,7 @@ function openCheckin(id){
   document.getElementById('inCondition').value = it.condition||'Good';
   document.getElementById('inNotes').value = '';
   document.getElementById('inBulkHint').style.display = 'none';
+  populateInLocation();
   toggleMaintWarn();
   closeModal('modalDetail');
   openModal('modalIn');
@@ -2053,12 +2198,13 @@ async function confirmCheckin(){
   const cond = document.getElementById('inCondition').value;
   const notes = document.getElementById('inNotes').value.trim();
   const checkedInBy = document.getElementById('inTech').value.trim();
+  const returnLocation = document.getElementById('inLocation').value || 'Shop';
   const routeMaint = (cond==='Needs Repair'||cond==='Out of Service');
   let processed = 0;
   ids.forEach(id=>{
     const it = inventory.find(i=>i.id===id);
     if(!it) return;
-    it.status = routeMaint ? 'Maintenance' : 'Shop';
+    it.status = routeMaint ? 'Maintenance' : returnLocation;
     it.condition = cond;
     it.notes = notes;
     it.lastMaintenanceDate = routeMaint ? todayStr() : it.lastMaintenanceDate;
@@ -2080,8 +2226,87 @@ async function confirmCheckin(){
     renderClientTimeline();
   }
   showToast(wasBulk
-    ? `${processed} item${processed!==1?'s':''} checked back in`
-    : (routeMaint? `${ids[0]} routed to maintenance` : `${ids[0]} checked back in`));
+    ? `${processed} item${processed!==1?'s':''} checked in to ${returnLocation}`
+    : (routeMaint? `${ids[0]} routed to maintenance` : `${ids[0]} checked in to ${returnLocation}`));
+}
+
+/* ============ MOVE (between Shop / vans / other locations) ============ */
+function openMove(id){
+  currentDetailId = id;
+  const it = inventory.find(i=>i.id===id);
+  if(!it) return;
+  document.getElementById('moveSub').textContent = `${it.id} — currently ${it.status}`;
+  const dest = document.getElementById('moveDest');
+  dest.innerHTML = homeLocations().filter(l=>l!==it.status).map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  closeModal('modalDetail');
+  openModal('modalMove');
+}
+async function confirmMove(){
+  const it = inventory.find(i=>i.id===currentDetailId);
+  if(!it) return;
+  const dest = document.getElementById('moveDest').value;
+  if(!dest) return;
+  const from = it.status;
+  it.status = dest;
+  await saveInventory();
+  logActivity('moved', it, `${from} → ${dest}`);
+  closeModal('modalMove');
+  renderAll();
+  showToast(`${it.id} moved to ${dest}`);
+}
+
+/* ============ BULK MOVE (load a van, shuffle several items at once) ============ */
+function openBulkMove(presetDest){
+  bulkMoveSelected = new Set();
+  const dest = document.getElementById('bulkMoveDest');
+  dest.innerHTML = homeLocations().map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  if(presetDest) dest.value = presetDest;
+  dest.onchange = () => renderBulkMoveList(document.querySelector('#modalBulkMove input[placeholder="Filter list..."]')?.value || '');
+  renderBulkMoveList('');
+  openModal('modalBulkMove');
+}
+function renderBulkMoveList(filter){
+  filter = (filter||'').toLowerCase();
+  const dest = document.getElementById('bulkMoveDest').value;
+  // Anything at a home location EXCEPT the chosen destination — no point listing
+  // items already sitting where you're sending things.
+  const items = inventory.filter(i=>isHomeStatus(i.status) && i.status!==dest &&
+    [i.id,i.type,i.model,i.serial,i.barcode].join(' ').toLowerCase().includes(filter))
+    .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+  const list = document.getElementById('bulkMoveList');
+  if(items.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">Nothing available to move${filter?' matching that':''}</div>`; return; }
+  list.innerHTML = items.map(it=>`
+    <label class="kit-row">
+      <input type="checkbox" ${bulkMoveSelected.has(it.id)?'checked':''} onchange="toggleBulkMove('${it.id}',this.checked)">
+      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''} <span style="color:var(--muted);">· currently ${it.status}</span></div></div>
+    </label>`).join('');
+  updateBulkMoveCount();
+}
+function toggleBulkMove(id, checked){
+  if(checked) bulkMoveSelected.add(id); else bulkMoveSelected.delete(id);
+  updateBulkMoveCount();
+}
+function updateBulkMoveCount(){
+  document.getElementById('bulkMoveCount').textContent = `${bulkMoveSelected.size} item${bulkMoveSelected.size!==1?'s':''} selected`;
+}
+async function confirmBulkMove(){
+  if(bulkMoveSelected.size===0){ showToast('Select at least one item first'); return; }
+  const dest = document.getElementById('bulkMoveDest').value;
+  let moved = 0;
+  bulkMoveSelected.forEach(id=>{
+    const it = inventory.find(i=>i.id===id);
+    if(!it || !isHomeStatus(it.status) || it.status===dest) return;
+    const from = it.status;
+    it.status = dest;
+    addActivityEntry('moved', it, `${from} → ${dest}`);
+    moved++;
+  });
+  await saveActivity();
+  await saveInventory();
+  bulkMoveSelected = new Set();
+  closeModal('modalBulkMove');
+  renderAll();
+  showToast(`${moved} item${moved!==1?'s':''} moved to ${dest}`);
 }
 
 /* ============ MISSING / RETIRE ============ */
@@ -2184,15 +2409,15 @@ function prefillKitAddress(){
 }
 function renderKitList(filter){
   filter = (filter||'').toLowerCase();
-  const shopItems = inventory.filter(i=>i.status==='Shop' &&
-    [i.id,i.type,i.model].join(' ').toLowerCase().includes(filter))
+  const shopItems = inventory.filter(i=>isHomeStatus(i.status) &&
+    [i.id,i.type,i.model,i.serial,i.barcode].join(' ').toLowerCase().includes(filter))
     .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
   const list = document.getElementById('kitList');
-  if(shopItems.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">No shop items match</div>`; return; }
+  if(shopItems.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">No available items match</div>`; return; }
   list.innerHTML = shopItems.map(it=>`
     <label class="kit-row">
       <input type="checkbox" ${kitSelected.has(it.id)?'checked':''} onchange="toggleKit('${it.id}',this.checked)">
-      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''}</div></div>
+      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''} <span style="color:var(--muted);">· ${it.status}</span></div></div>
     </label>`).join('');
   updateKitCount();
 }
@@ -2216,8 +2441,7 @@ async function confirmKit(){
   kitSelected.forEach(id=>{
     const it = inventory.find(i=>i.id===id);
     if(!it) return;
-    if(it.status!=='Shop' && it.status!=='Maintenance'){
-      unavailable.push(it.id); // someone else already checked this one out — skip it, don't overwrite
+    if(!isHomeStatus(it.status) && it.status!=='Maintenance'){
       return;
     }
     it.status='Jobsite'; it.jobsite=jobsite; it.tech=tech;
@@ -2354,6 +2578,58 @@ async function removePersonnel(name){
   personnel = personnel.filter(p=>p!==name);
   await savePersonnel();
   renderTeam();
+  showToast(`${name} removed`);
+}
+
+/* ============ LOCATIONS (vans, trailers, shop areas) ============ */
+function openLocations(){
+  document.getElementById('locationNameInput').value = '';
+  renderLocations();
+  openModal('modalLocations');
+  setTimeout(()=>document.getElementById('locationNameInput').focus(), 150);
+}
+function renderLocations(){
+  const list = document.getElementById('locationList');
+  const countEl = document.getElementById('locationCount');
+  if(!list) return; // modal not in DOM yet
+  countEl.textContent = customLocations.length + 1; // +1 for built-in Shop
+  const rows = [];
+  rows.push(`<div class="team-row"><div class="nm"><div class="avatar">SH</div>Shop <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(built in)</span></div><button class="btn btn-ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeModal('modalLocations');openBulkMove('Shop')">Load</button></div>`);
+  const sorted = [...customLocations].sort((a,b)=>a.localeCompare(b));
+  sorted.forEach(name=>{
+    const count = inventory.filter(it=>it.status===name).length;
+    rows.push(`<div class="team-row">
+      <div class="nm"><div class="avatar">${initials(name)}</div>${escapeHtml(name)}${count? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${count} item${count!==1?'s':''})</span>`:''}</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn btn-ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeModal('modalLocations');openBulkMove('${name.replace(/'/g,"\\'")}')">Load</button>
+        <button class="del-btn" onclick="removeLocation('${name.replace(/'/g,"\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      </div>
+    </div>`);
+  });
+  list.innerHTML = rows.join('');
+}
+async function confirmAddLocation(){
+  const input = document.getElementById('locationNameInput');
+  const name = input.value.trim();
+  if(!name){ showToast('Enter a location name first'); return; }
+  if(name.toLowerCase()==='shop'){ showToast('Shop already exists'); input.value=''; return; }
+  const exists = customLocations.some(l=>l.toLowerCase()===name.toLowerCase());
+  if(exists){ showToast(`${name} is already a location`); input.value=''; return; }
+  customLocations.push(name);
+  await saveLocations();
+  input.value = '';
+  renderLocations();
+  showToast(`${name} added`);
+}
+async function removeLocation(name){
+  const count = inventory.filter(it=>it.status===name).length;
+  const msg = count
+    ? `${count} item${count!==1?'s':''} currently show ${name} as their location. Remove it from the list anyway? (Those items keep their current status — reassign them from their detail page.)`
+    : `Remove "${name}" from the locations list?`;
+  if(!confirm(msg)) return;
+  customLocations = customLocations.filter(l=>l!==name);
+  await saveLocations();
+  renderLocations();
   showToast(`${name} removed`);
 }
 
