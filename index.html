@@ -430,6 +430,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
 .scan-frame{
   position:absolute;inset:16%;border:2.5px solid var(--cyan);border-radius:18px;
   box-shadow:0 0 0 2000px rgba(0,0,0,0.35);
+  transition:border-color .15s, box-shadow .15s;
+}
+.scan-frame.scan-hit{
+  border-color:var(--green);
+  box-shadow:0 0 0 2000px rgba(0,0,0,0.35), 0 0 24px 4px var(--green);
 }
 .scan-status{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:12px;font-weight:600;}
 .or-div{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;}
@@ -2520,15 +2525,22 @@ async function confirmKit(){
 }
 
 /* ============ SCAN ============ */
+let lastScanCode = null;
+let lastScanTime = 0;
+const SCAN_COOLDOWN_MS = 2000; // ignore the same code again for this long, so a still-visible label doesn't get reprocessed 10x/sec
+
 async function openScan(mode){
   scanMode = mode || 'lookup';
+  lastScanCode = null;
+  lastScanTime = 0;
   openModal('modalScan');
   document.getElementById('manualCode').value='';
   const statusTxt = document.getElementById('scanStatusTxt');
+  const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
   const modeMsg = {
-    clientReturn: 'Scan an item to add it to the return list…',
-    jobKit: 'Scan an item to add it to this job kit…',
-    bulkMove: 'Scan an item to add it to the move list…',
+    clientReturn: 'Scan items one after another — they\'ll add to the return list as you go',
+    jobKit: 'Scan items one after another — they\'ll add to this job kit as you go',
+    bulkMove: 'Scan items one after another — they\'ll add to the move list as you go',
   }[scanMode] || 'Looking for a code…';
   if(typeof Html5Qrcode === 'undefined'){
     statusTxt.textContent = 'Camera scanner failed to load — use the code field below';
@@ -2540,7 +2552,10 @@ async function openScan(mode){
     await scannerInstance.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 230, height: 230 } },
-      (decodedText) => { handleScanResult(decodedText); },
+      (decodedText) => {
+        if(isContinuous){ handleContinuousScan(decodedText); }
+        else { handleScanResult(decodedText); }
+      },
       () => {} // per-frame "not found yet" callback — expected constantly while aiming, ignore
     );
   }catch(e){
@@ -2556,21 +2571,40 @@ function closeScan(){
     inst.stop().then(()=>inst.clear()).catch(()=>{});
   }
 }
+function handleContinuousScan(code){
+  const now = Date.now();
+  const clean = code.trim().toUpperCase();
+  if(clean===lastScanCode && (now-lastScanTime)<SCAN_COOLDOWN_MS) return; // same label still in frame — ignore, camera keeps running
+  lastScanCode = clean;
+  lastScanTime = now;
+  lookupCode(code);
+  flashScanFrame();
+  if(navigator.vibrate) navigator.vibrate(80);
+}
+function flashScanFrame(){
+  const frame = document.querySelector('#modalScan .scan-frame');
+  if(!frame) return;
+  frame.classList.add('scan-hit');
+  setTimeout(()=>frame.classList.remove('scan-hit'), 350);
+}
 function handleScanResult(code){
-  const continuousMode = scanMode; // captured before closeScan() could reset anything
-  const shouldReopen = ['clientReturn','jobKit','bulkMove'].includes(continuousMode);
+  // Only reached for plain single-item lookup mode now — continuous modes
+  // (job kit / move / return) route through handleContinuousScan instead
+  // and never stop the camera between scans.
   closeScan();
   lookupCode(code);
-  if(shouldReopen) setTimeout(()=>openScan(continuousMode), 400);
 }
 function manualLookup(){
   const code = document.getElementById('manualCode').value.trim();
   if(!code) return;
-  const continuousMode = scanMode;
-  const shouldReopen = ['clientReturn','jobKit','bulkMove'].includes(continuousMode);
-  closeScan();
-  lookupCode(code);
-  if(shouldReopen) setTimeout(()=>openScan(continuousMode), 400);
+  document.getElementById('manualCode').value = '';
+  const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
+  if(isContinuous){
+    lookupCode(code); // camera keeps running — this is just an alternate way to add one item
+  } else {
+    closeScan();
+    lookupCode(code);
+  }
 }
 function lookupCode(code){
   const clean = code.trim().toUpperCase();
