@@ -940,7 +940,13 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
   <div class="field">
     <label>Select equipment (shop items only)</label>
-    <input placeholder="Filter list..." oninput="renderKitList(this.value)" style="margin-bottom:8px;">
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input placeholder="Filter list..." oninput="renderKitList(this.value)" style="flex:1;margin-bottom:0;">
+      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);white-space:nowrap;" onclick="openScanForJobKit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        Scan
+      </button>
+    </div>
     <div class="kit-list" id="kitList"></div>
   </div>
   <div class="kit-selected-bar">
@@ -1000,7 +1006,13 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
   <div class="field">
     <label>Select equipment</label>
-    <input placeholder="Filter list..." oninput="renderBulkMoveList(this.value)" style="margin-bottom:8px;">
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input placeholder="Filter list..." oninput="renderBulkMoveList(this.value)" style="flex:1;margin-bottom:0;">
+      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);white-space:nowrap;" onclick="openScanForBulkMove()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        Scan
+      </button>
+    </div>
     <div class="kit-list" id="bulkMoveList"></div>
   </div>
   <div class="kit-selected-bar">
@@ -1583,6 +1595,43 @@ function addScannedItemToClientReturn(it){
   clientReturnSelected.add(it.id);
   renderClientEquipment();
   showToast(`${it.id} added to return list`);
+}
+function openScanForJobKit(){
+  openScan('jobKit');
+}
+function addScannedItemToJobKit(it){
+  if(!isHomeStatus(it.status)){
+    showToast(`${it.id} is currently ${it.status} — not available to check out`);
+    return;
+  }
+  if(kitSelected.has(it.id)){
+    showToast(`${it.id} is already in this kit`);
+    return;
+  }
+  kitSelected.add(it.id);
+  renderKitList(document.querySelector('#modalKit input[placeholder="Filter list..."]')?.value || '');
+  showToast(`${it.id} added — ${kitSelected.size} in kit`);
+}
+function openScanForBulkMove(){
+  openScan('bulkMove');
+}
+function addScannedItemToBulkMove(it){
+  const dest = document.getElementById('bulkMoveDest')?.value;
+  if(!isHomeStatus(it.status)){
+    showToast(`${it.id} is currently ${it.status} — not available to move`);
+    return;
+  }
+  if(it.status===dest){
+    showToast(`${it.id} is already at ${dest}`);
+    return;
+  }
+  if(bulkMoveSelected.has(it.id)){
+    showToast(`${it.id} is already selected`);
+    return;
+  }
+  bulkMoveSelected.add(it.id);
+  renderBulkMoveList(document.querySelector('#modalBulkMove input[placeholder="Filter list..."]')?.value || '');
+  showToast(`${it.id} added — ${bulkMoveSelected.size} selected`);
 }
 function openBulkCheckinForClient(){
   if(clientReturnSelected.size===0){ showToast('Select at least one item first'); return; }
@@ -2475,7 +2524,11 @@ async function openScan(mode){
   openModal('modalScan');
   document.getElementById('manualCode').value='';
   const statusTxt = document.getElementById('scanStatusTxt');
-  const modeMsg = scanMode==='clientReturn' ? 'Scan an item to add it to the return list…' : 'Looking for a code…';
+  const modeMsg = {
+    clientReturn: 'Scan an item to add it to the return list…',
+    jobKit: 'Scan an item to add it to this job kit…',
+    bulkMove: 'Scan an item to add it to the move list…',
+  }[scanMode] || 'Looking for a code…';
   if(typeof Html5Qrcode === 'undefined'){
     statusTxt.textContent = 'Camera scanner failed to load — use the code field below';
     return;
@@ -2503,18 +2556,20 @@ function closeScan(){
   }
 }
 function handleScanResult(code){
-  const stayForClientReturn = scanMode==='clientReturn';
+  const continuousMode = scanMode; // captured before closeScan() could reset anything
+  const shouldReopen = ['clientReturn','jobKit','bulkMove'].includes(continuousMode);
   closeScan();
   lookupCode(code);
-  if(stayForClientReturn) setTimeout(()=>openScan('clientReturn'), 400);
+  if(shouldReopen) setTimeout(()=>openScan(continuousMode), 400);
 }
 function manualLookup(){
   const code = document.getElementById('manualCode').value.trim();
   if(!code) return;
-  const stayForClientReturn = scanMode==='clientReturn';
+  const continuousMode = scanMode;
+  const shouldReopen = ['clientReturn','jobKit','bulkMove'].includes(continuousMode);
   closeScan();
   lookupCode(code);
-  if(stayForClientReturn) setTimeout(()=>openScan('clientReturn'), 400);
+  if(shouldReopen) setTimeout(()=>openScan(continuousMode), 400);
 }
 function lookupCode(code){
   const clean = code.trim().toUpperCase();
@@ -2522,6 +2577,10 @@ function lookupCode(code){
   if(!it){ showToast(`No equipment found for "${code}"`); return; }
   if(scanMode==='clientReturn'){
     addScannedItemToClientReturn(it);
+  } else if(scanMode==='jobKit'){
+    addScannedItemToJobKit(it);
+  } else if(scanMode==='bulkMove'){
+    addScannedItemToBulkMove(it);
   } else {
     openDetail(it.id);
   }
