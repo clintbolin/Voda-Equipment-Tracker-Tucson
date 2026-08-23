@@ -436,7 +436,19 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   border-color:var(--green);
   box-shadow:0 0 0 2000px rgba(0,0,0,0.35), 0 0 24px 4px var(--green);
 }
+.scan-frame.scan-miss{
+  border-color:var(--red);
+  box-shadow:0 0 0 2000px rgba(0,0,0,0.35), 0 0 24px 4px var(--red);
+}
 .scan-status{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:12px;font-weight:600;}
+.scan-last-result{
+  min-height:40px;margin-top:10px;padding:10px 14px;border-radius:12px;
+  font-size:13.5px;font-weight:700;text-align:center;display:none;
+  align-items:center;justify-content:center;gap:8px;
+}
+.scan-last-result.show{display:flex;}
+.scan-last-result.ok{background:var(--green-bg,#e6f7ee);color:var(--green,#1a9d5c);}
+.scan-last-result.fail{background:var(--red-bg,#fdeceb);color:var(--red,#d6455b);}
 .or-div{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;}
 .or-div::before,.or-div::after{content:"";flex:1;height:1px;background:var(--line);}
 
@@ -859,6 +871,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div class="scan-frame"></div>
     <div class="scan-status" id="scanStatusTxt">Starting camera…</div>
   </div>
+  <div id="scanLastResult" class="scan-last-result"></div>
   <div class="or-div">or enter code manually</div>
   <div class="field" style="margin-bottom:6px;">
     <input id="manualCode" placeholder="e.g. DH-005" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')manualLookup()">
@@ -1592,31 +1605,28 @@ function openScanForClientReturn(){
   openScan('clientReturn');
 }
 function addScannedItemToClientReturn(it){
-  if(!currentClientName) return;
+  if(!currentClientName) return {ok:false, msg:'No job selected'};
   const belongs = getClientItems(currentClientName).some(x=>x.id===it.id);
   if(!belongs){
-    showToast(`${it.id} isn't checked out to this client`);
-    return;
+    return {ok:false, msg:`${it.id} isn't checked out to this client`};
   }
   clientReturnSelected.add(it.id);
   renderClientEquipment();
-  showToast(`${it.id} added to return list`);
+  return {ok:true, msg:`${it.id} added to return list`, count:clientReturnSelected.size};
 }
 function openScanForJobKit(){
   openScan('jobKit');
 }
 function addScannedItemToJobKit(it){
   if(!isHomeStatus(it.status)){
-    showToast(`${it.id} is currently ${it.status} — not available to check out`);
-    return;
+    return {ok:false, msg:`${it.id} is ${it.status} — not available`};
   }
   if(kitSelected.has(it.id)){
-    showToast(`${it.id} is already in this kit`);
-    return;
+    return {ok:false, msg:`${it.id} already in kit`};
   }
   kitSelected.add(it.id);
   renderKitList(document.querySelector('#modalKit input[placeholder="Filter list..."]')?.value || '');
-  showToast(`${it.id} added — ${kitSelected.size} in kit`);
+  return {ok:true, msg:`${it.id} added`, count:kitSelected.size};
 }
 function openScanForBulkMove(){
   openScan('bulkMove');
@@ -1624,20 +1634,17 @@ function openScanForBulkMove(){
 function addScannedItemToBulkMove(it){
   const dest = document.getElementById('bulkMoveDest')?.value;
   if(!isHomeStatus(it.status)){
-    showToast(`${it.id} is currently ${it.status} — not available to move`);
-    return;
+    return {ok:false, msg:`${it.id} is ${it.status} — not available`};
   }
   if(it.status===dest){
-    showToast(`${it.id} is already at ${dest}`);
-    return;
+    return {ok:false, msg:`${it.id} already at ${dest}`};
   }
   if(bulkMoveSelected.has(it.id)){
-    showToast(`${it.id} is already selected`);
-    return;
+    return {ok:false, msg:`${it.id} already selected`};
   }
   bulkMoveSelected.add(it.id);
   renderBulkMoveList(document.querySelector('#modalBulkMove input[placeholder="Filter list..."]')?.value || '');
-  showToast(`${it.id} added — ${bulkMoveSelected.size} selected`);
+  return {ok:true, msg:`${it.id} added`, count:bulkMoveSelected.size};
 }
 function openBulkCheckinForClient(){
   if(clientReturnSelected.size===0){ showToast('Select at least one item first'); return; }
@@ -2535,6 +2542,8 @@ async function openScan(mode){
   lastScanTime = 0;
   openModal('modalScan');
   document.getElementById('manualCode').value='';
+  const lastResultEl = document.getElementById('scanLastResult');
+  if(lastResultEl){ lastResultEl.className = 'scan-last-result'; lastResultEl.innerHTML = ''; }
   const statusTxt = document.getElementById('scanStatusTxt');
   const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
   const modeMsg = {
@@ -2571,21 +2580,48 @@ function closeScan(){
     inst.stop().then(()=>inst.clear()).catch(()=>{});
   }
 }
+let scanAudioCtx = null;
+function playBeep(ok){
+  try{
+    scanAudioCtx = scanAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = scanAudioCtx.createOscillator();
+    const gain = scanAudioCtx.createGain();
+    osc.connect(gain); gain.connect(scanAudioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = ok ? 880 : 220;
+    gain.gain.setValueAtTime(0.18, scanAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, scanAudioCtx.currentTime + (ok?0.15:0.25));
+    osc.start();
+    osc.stop(scanAudioCtx.currentTime + (ok?0.16:0.26));
+  }catch(e){ /* audio not available — visual + haptic feedback still cover it */ }
+}
 function handleContinuousScan(code){
   const now = Date.now();
   const clean = code.trim().toUpperCase();
   if(clean===lastScanCode && (now-lastScanTime)<SCAN_COOLDOWN_MS) return; // same label still in frame — ignore, camera keeps running
   lastScanCode = clean;
   lastScanTime = now;
-  lookupCode(code);
-  flashScanFrame();
-  if(navigator.vibrate) navigator.vibrate(80);
+  const result = lookupCode(code);
+  flashScanFrame(result.ok);
+  showScanLastResult(result);
+  playBeep(result.ok);
+  if(navigator.vibrate) navigator.vibrate(result.ok ? 80 : [60,60,60]);
 }
-function flashScanFrame(){
+function showScanLastResult(result){
+  const el = document.getElementById('scanLastResult');
+  if(!el) return;
+  el.className = 'scan-last-result show ' + (result.ok ? 'ok' : 'fail');
+  const icon = result.ok
+    ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  el.innerHTML = `${icon}<span>${escapeHtml(result.msg)}${result.count!==undefined?` — ${result.count} total`:''}</span>`;
+}
+function flashScanFrame(ok){
   const frame = document.querySelector('#modalScan .scan-frame');
   if(!frame) return;
-  frame.classList.add('scan-hit');
-  setTimeout(()=>frame.classList.remove('scan-hit'), 350);
+  frame.classList.remove('scan-hit','scan-miss');
+  frame.classList.add(ok!==false ? 'scan-hit' : 'scan-miss');
+  setTimeout(()=>frame.classList.remove('scan-hit','scan-miss'), 500);
 }
 function handleScanResult(code){
   // Only reached for plain single-item lookup mode now — continuous modes
@@ -2600,7 +2636,9 @@ function manualLookup(){
   document.getElementById('manualCode').value = '';
   const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
   if(isContinuous){
-    lookupCode(code); // camera keeps running — this is just an alternate way to add one item
+    const result = lookupCode(code); // camera keeps running — this is just an alternate way to add one item
+    showScanLastResult(result);
+    playBeep(result.ok);
   } else {
     closeScan();
     lookupCode(code);
@@ -2609,16 +2647,24 @@ function manualLookup(){
 function lookupCode(code){
   const clean = code.trim().toUpperCase();
   const it = inventory.find(i=>i.id.toUpperCase()===clean || (i.barcode||'').toUpperCase()===clean);
-  if(!it){ showToast(`No equipment found for "${code}"`); return; }
+  if(!it){
+    const result = {ok:false, msg:`No match for "${code}"`};
+    showToast(result.msg);
+    return result;
+  }
+  let result;
   if(scanMode==='clientReturn'){
-    addScannedItemToClientReturn(it);
+    result = addScannedItemToClientReturn(it);
   } else if(scanMode==='jobKit'){
-    addScannedItemToJobKit(it);
+    result = addScannedItemToJobKit(it);
   } else if(scanMode==='bulkMove'){
-    addScannedItemToBulkMove(it);
+    result = addScannedItemToBulkMove(it);
   } else {
     openDetail(it.id);
+    result = {ok:true, msg:it.id};
   }
+  if(scanMode!=='lookup') showToast(result.msg + (result.count!==undefined ? ` (${result.count} total)` : ''));
+  return result;
 }
 
 /* ============ TEAM / PERSONNEL ============ */
