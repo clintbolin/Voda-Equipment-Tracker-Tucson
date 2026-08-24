@@ -12,6 +12,7 @@
 <style>
 :root{
   --navy:#0A1F3D;
+  --navy-icon:#0A1F3D; /* same as navy in light mode; lightened in dark mode below for icons sitting on --gray-bg/--blue-bg/--card, which go dark there */
   --navy-light:#14335F;
   --cyan:#00B4D8;
   --cyan-dark:#0090AD;
@@ -43,6 +44,7 @@
   --blue-bg:#0F2440;
   --amber-bg:#332711;
   --red-bg:#3A1620;
+  --navy-icon:#5DD8EC;
 }
 [data-theme="dark"] .brand-mark{ background:rgba(255,255,255,0.06); }
 [data-theme="dark"] .field input,
@@ -142,6 +144,12 @@ header.top::after{
   margin-left:auto;background:#9C2E42;color:#fff;border:none;border-radius:8px;
   padding:6px 10px;font-size:12px;font-weight:600;
 }
+.banner-amber{ background:var(--amber-bg); border-color:#F0D9A8; color:#8A5A00; }
+.banner-amber button{ background:#8A5A00; }
+[data-theme="dark"] .banner{ border-color:#5C2430; color:#F3B4C2; }
+[data-theme="dark"] .banner button{ background:#F3B4C2; color:#3A1620; }
+[data-theme="dark"] .banner-amber{ border-color:#5C4A1E; color:#F0CE8A; }
+[data-theme="dark"] .banner-amber button{ background:#F0CE8A; color:#332711; }
 
 /* quick actions */
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -182,7 +190,7 @@ header.top::after{
 .eq-group{margin-bottom:6px;}
 .eq-group-head{display:flex;align-items:center;gap:8px;padding:10px 4px 6px;cursor:pointer;user-select:none;}
 .eq-group-head .ic{width:26px;height:26px;border-radius:7px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.eq-group-head .ic svg{width:14px;height:14px;stroke:var(--navy);}
+.eq-group-head .ic svg{width:14px;height:14px;stroke:var(--navy-icon);}
 .eq-group-head .nm{font-weight:700;font-size:13.5px;flex:1;}
 .eq-group-head .ct{font-size:12px;color:var(--muted);}
 .eq-group-head .chev{width:14px;height:14px;stroke:var(--muted);transition:transform .15s;}
@@ -381,20 +389,29 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   body.printing-reports #reportsPrintTitle{ display:block !important; }
 }
 
-/* ===== formal fleet report document ===== */
-.fleet-report-doc{ font-family:Georgia,'Times New Roman',serif; color:#1a1a1a; padding:4px 2px 20px; }
-.report-letterhead{ display:flex; align-items:center; gap:14px; border-bottom:3px solid var(--navy); padding-bottom:14px; margin-bottom:6px; }
+/* ===== formal fleet report document =====
+   Always renders as a light printed page, independent of the app's
+   light/dark theme — this is meant to look like a document you'd print
+   or attach to an email, not a themed in-app screen. Every color below
+   is a fixed value on purpose, not a --variable, so dark mode can't
+   turn the text the same color as its background. */
+.fleet-report-doc{
+  font-family:Georgia,'Times New Roman',serif; color:#1a1a1a;
+  background:#ffffff; border-radius:14px; padding:20px 18px 24px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.25);
+}
+.report-letterhead{ display:flex; align-items:center; gap:14px; border-bottom:3px solid #0A1F3D; padding-bottom:14px; margin-bottom:6px; }
 .report-letterhead img{ width:46px; height:46px; border-radius:10px; }
-.report-co-name{ font-size:15px; font-weight:700; color:var(--navy); font-family:-apple-system,sans-serif; }
-.report-doc-title{ font-size:12px; color:var(--muted); font-family:-apple-system,sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
-.report-meta{ font-size:11px; color:var(--muted); font-family:-apple-system,sans-serif; margin-bottom:18px; }
+.report-co-name{ font-size:15px; font-weight:700; color:#0A1F3D; font-family:-apple-system,sans-serif; }
+.report-doc-title{ font-size:12px; color:#6B7684; font-family:-apple-system,sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
+.report-meta{ font-size:11px; color:#6B7684; font-family:-apple-system,sans-serif; margin-bottom:18px; }
 .fleet-report-doc .report-section{ margin-bottom:20px; break-inside:avoid; }
-.fleet-report-doc .report-h{ font-size:14px; font-weight:700; color:var(--navy); border-bottom:1.5px solid var(--line); padding-bottom:5px; margin-bottom:8px; font-family:-apple-system,sans-serif; }
-.fleet-report-doc .report-subh{ font-size:12px; font-weight:700; color:var(--ink); margin:12px 0 6px; font-family:-apple-system,sans-serif; }
+.fleet-report-doc .report-h{ font-size:14px; font-weight:700; color:#0A1F3D; border-bottom:1.5px solid #E2E6EB; padding-bottom:5px; margin-bottom:8px; font-family:-apple-system,sans-serif; }
+.fleet-report-doc .report-subh{ font-size:12px; font-weight:700; color:#1a1a1a; margin:12px 0 6px; font-family:-apple-system,sans-serif; }
 .fleet-report-doc ul{ margin:0; padding-left:20px; }
-.fleet-report-doc li{ font-size:12.5px; line-height:1.7; }
-.fleet-report-doc p{ font-size:12.5px; line-height:1.6; margin:0; }
-.report-footer{ margin-top:24px; padding-top:10px; border-top:1px solid var(--line); font-size:10px; color:var(--muted); font-family:-apple-system,sans-serif; text-align:center; }
+.fleet-report-doc li{ font-size:12.5px; line-height:1.7; color:#1a1a1a; }
+.fleet-report-doc p{ font-size:12.5px; line-height:1.6; margin:0; color:#1a1a1a; }
+.report-footer{ margin-top:24px; padding-top:10px; border-top:1px solid #E2E6EB; font-size:10px; color:#6B7684; font-family:-apple-system,sans-serif; text-align:center; }
 
 .btn-row{display:flex;gap:10px;margin-top:6px;}
 .btn{
@@ -499,6 +516,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <!-- HOME -->
   <div class="view active" id="view-home">
     <div id="overdueBanner"></div>
+    <div id="lowStockBanner"></div>
     <div class="section-title">Quick actions</div>
     <div class="quick-grid">
       <button class="quick-btn primary" onclick="openScan()">
@@ -535,6 +553,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
         <div class="t">Manage locations</div>
         <div class="d">Vans, trailers, shop areas</div>
+      </button>
+      <button class="quick-btn" onclick="openRecentlyDeleted()">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/><path d="M10 11v6M14 11v6"/></svg></div>
+        <div class="t">Recently deleted</div>
+        <div class="d">Restore items removed by mistake</div>
       </button>
     </div>
 
@@ -784,7 +807,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openEditClient()" style="cursor:pointer;" title="Edit job"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printClientReport()" style="cursor:pointer;" title="Print exactly what's on screen"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="saveClientReport()" style="cursor:pointer;" title="Save as PDF to attach to email, Workiz, etc."><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openClientFormalReport()" style="cursor:pointer;" title="Formal report, all details for this job"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openClientFormalReport()" style="cursor:pointer;" title="Formal report, all details for this job"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="deleteClient()" style="cursor:pointer;" title="Delete job"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       <button class="close-x" onclick="closeModal('modalClientDetail')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -798,7 +821,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
   <div id="cdReturnBar" style="display:none;position:sticky;top:0;z-index:5;background:#fff;padding:8px 0;margin-bottom:6px;border-bottom:1px solid var(--line);">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <span id="cdReturnCount" style="font-size:12.5px;font-weight:700;color:var(--navy);">0 selected</span>
+      <span id="cdReturnCount" style="font-size:12.5px;font-weight:700;color:var(--navy-icon);">0 selected</span>
       <a href="#" onclick="selectAllClientReturn();return false;" style="font-size:11.5px;color:var(--cyan-dark);font-weight:700;text-decoration:none;">Select all</a>
       <div style="display:flex;gap:8px;">
         <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openScanForClientReturn()">
@@ -911,6 +934,37 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmAddItem()">Add to inventory</button></div>
 </div></div>
 
+<!-- Edit equipment -->
+<div class="overlay" id="modalEditItem"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Edit equipment</div><div class="sheet-sub">Fix a typo without retiring and re-adding the unit</div></div>
+    <button class="close-x" onclick="closeModal('modalEditItem')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="field">
+    <label>Equipment type</label>
+    <input list="typeList" id="editType">
+  </div>
+  <div class="field">
+    <label>Asset ID</label>
+    <input id="editId" style="text-transform:uppercase;">
+    <div class="hint">Only change this if it was mistyped. If you've already printed a barcode/QR label for this item, changing the ID means the old label will stop scanning until you reprint it.</div>
+  </div>
+  <div class="field">
+    <label>Make / model</label>
+    <input id="editModel">
+  </div>
+  <div class="field">
+    <label>Serial number</label>
+    <input id="editSerial">
+  </div>
+  <div class="field">
+    <label>Purchase date</label>
+    <input type="date" id="editPurchase">
+  </div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="confirmEditItem()">Save changes</button></div>
+</div></div>
+
 <!-- Manage Team -->
 <div class="overlay" id="modalTeam"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -972,6 +1026,17 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div class="hint" id="kitCount" style="margin-bottom:8px;">0 items selected</div>
     <button class="btn btn-cyan" style="width:100%;" onclick="confirmKit()">Check out selected items</button>
   </div>
+</div></div>
+
+<!-- Recently Deleted -->
+<div class="overlay" id="modalRecentlyDeleted"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Recently deleted</div><div class="sheet-sub">Deleted items stay here for 30 days before they're gone for good</div></div>
+    <button class="close-x" onclick="closeModal('modalRecentlyDeleted')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="section-title">Deleted items (<span id="recentlyDeletedCount">0</span>)</div>
+  <div id="recentlyDeletedList"></div>
 </div></div>
 
 <!-- Manage Locations -->
@@ -1061,6 +1126,7 @@ const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !
 const REFRESH_INTERVAL_MS = 20000;
 
 let inventory = [];
+function visibleInventory(){ return inventory.filter(i=>!i.deletedAt); }
 let activityLog = [];
 let jobsitesKnown = new Set();
 let personnel = [...KNOWN_TECHS];
@@ -1142,6 +1208,7 @@ async function loadData(silent){
       await saveInventory();
     }
     activityLog = data.activity || [];
+    purgeExpiredDeletes();
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
     if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
     clientAddresses = {};
@@ -1285,15 +1352,17 @@ function renderAll(){
   renderReports();
   renderTeam();
   renderLocations();
+  renderRecentlyDeleted();
   renderClientsList();
 }
 
 function renderStats(){
-  const shop = inventory.filter(i=>isHomeStatus(i.status)).length;
-  const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
-  const overdue = inventory.filter(isOverdue).length;
+  const items = visibleInventory();
+  const shop = items.filter(i=>isHomeStatus(i.status)).length;
+  const jobsite = items.filter(i=>i.status==='Jobsite').length;
+  const overdue = items.filter(isOverdue).length;
   document.getElementById('statRow').innerHTML = `
-    <div class="stat-card"><div class="n">${inventory.length}</div><div class="l">Total fleet</div></div>
+    <div class="stat-card"><div class="n">${items.length}</div><div class="l">Total fleet</div></div>
     <div class="stat-card"><div class="n">${jobsite}</div><div class="l">On jobsites</div></div>
     <div class="stat-card ${overdue? 'alert':''}"><div class="n">${overdue}</div><div class="l">Overdue</div></div>
   `;
@@ -1305,10 +1374,32 @@ function renderStats(){
       <button onclick="switchView('inventory');setStatusFilter('overdue')">Review</button>
     </div>`;
   } else banner.innerHTML='';
+  renderLowStockBanner(items);
+}
+function renderLowStockBanner(items){
+  const banner = document.getElementById('lowStockBanner');
+  if(!banner) return;
+  const active = items.filter(i=>i.status!=='Retired');
+  const byType = {};
+  active.forEach(it=>{
+    byType[it.type] = byType[it.type] || {total:0, available:0};
+    byType[it.type].total++;
+    if(isHomeStatus(it.status)) byType[it.type].available++;
+  });
+  const low = Object.keys(byType).filter(t=>{
+    const {total, available} = byType[t];
+    return available===0 || (available/total) <= 0.2;
+  }).sort();
+  if(low.length===0){ banner.innerHTML=''; return; }
+  banner.innerHTML = `<div class="banner banner-amber">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2.2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+    <span>Running low: ${low.map(t=>`${t} (${byType[t].available}/${byType[t].total} available)`).join(', ')}</span>
+    <button onclick="switchView('inventory')">Review</button>
+  </div>`;
 }
 
 function renderHome(){
-  const out = inventory.filter(i=>i.status==='Jobsite').sort((a,b)=> (a.expectedReturnDate||'9999').localeCompare(b.expectedReturnDate||'9999'));
+  const out = visibleInventory().filter(i=>i.status==='Jobsite').sort((a,b)=> (a.expectedReturnDate||'9999').localeCompare(b.expectedReturnDate||'9999'));
   const wrap = document.getElementById('homeJobsite');
   if(out.length===0){ wrap.innerHTML = `<div class="empty">Everything's back in the shop.</div>`; return; }
   wrap.innerHTML = out.map(it=>eqCardHTML(it)).join('');
@@ -1323,13 +1414,13 @@ function setJobsCategory(cat, btn){
 }
 function getClientNames(){
   const names = new Set();
-  inventory.forEach(it=>{ if(it.status==='Jobsite' && it.jobsite) names.add(it.jobsite); });
+  visibleInventory().forEach(it=>{ if(it.status==='Jobsite' && it.jobsite) names.add(it.jobsite); });
   activityLog.forEach(a=>{ if(a.jobsite) names.add(a.jobsite); });
   Object.keys(clientAddresses).forEach(n=>names.add(n)); // a client with a saved address should never disappear
   return [...names];
 }
 function getClientItems(name){
-  return inventory.filter(it=>it.status==='Jobsite' && it.jobsite===name);
+  return visibleInventory().filter(it=>it.status==='Jobsite' && it.jobsite===name);
 }
 function getClientTimeline(name){
   return activityLog
@@ -1771,7 +1862,7 @@ function renderInventory(){
   chipWrap.innerHTML = filters.map(f=>`<div class="chip ${f===activeStatusFilter?'active':''}" onclick="setStatusFilter('${f.replace(/'/g,"\\'")}')">${escapeHtml(labelFor(f))}</div>`).join('');
 
   const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
-  let items = inventory.filter(it=>{
+  let items = visibleInventory().filter(it=>{
     if(activeStatusFilter==='overdue'){ if(!isOverdue(it)) return false; }
     else if(activeStatusFilter!=='all' && it.status!==activeStatusFilter) return false;
     if(!q) return true;
@@ -1830,10 +1921,10 @@ function eqCardHTML(it){
   </div>`;
 }
 function typeIcon(type){
-  if(type==='Dehumidifier') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7.5 6 12a6 6 0 0 1-12 0c0-4.5 6-12 6-12Z"/></svg>`;
-  if(type==='Air Scrubber') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`;
-  if(type==='Air Mover') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2M17.6 7.6A2 2 0 1 1 19 11H2"/></svg>`;
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>`;
+  if(type==='Dehumidifier') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7.5 6 12a6 6 0 0 1-12 0c0-4.5 6-12 6-12Z"/></svg>`;
+  if(type==='Air Scrubber') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`;
+  if(type==='Air Mover') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2M17.6 7.6A2 2 0 1 1 19 11H2"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>`;
 }
 
 /* ============ RENDER: ACTIVITY ============ */
@@ -1946,13 +2037,13 @@ function generateFleetReportHtml(){
     <div class="report-meta">Generated ${fmtDate(todayStr())} &middot; ${escapeHtml(currentReportSelectionLabel())}</div>`;
 
   if(include('fleetoverview')){
-    const shop = inventory.filter(i=>isHomeStatus(i.status)).length;
-    const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
-    const missing = inventory.filter(i=>i.status==='Missing').length;
+    const shop = visibleInventory().filter(i=>isHomeStatus(i.status)).length;
+    const jobsite = visibleInventory().filter(i=>i.status==='Jobsite').length;
+    const missing = visibleInventory().filter(i=>i.status==='Missing').length;
     html += `<div class="report-section">
       <div class="report-h">Fleet Overview</div>
       <ul>
-        <li><b>Total fleet:</b> ${inventory.length}</li>
+        <li><b>Total fleet:</b> ${visibleInventory().length}</li>
         <li><b>In shop:</b> ${shop}</li>
         <li><b>On jobsites:</b> ${jobsite}</li>
         <li><b>Missing:</b> ${missing}</li>
@@ -1962,7 +2053,7 @@ function generateFleetReportHtml(){
 
   if(include('bysite')){
     const bySite = {};
-    inventory.filter(i=>i.status==='Jobsite').forEach(it=>{
+    visibleInventory().filter(i=>i.status==='Jobsite').forEach(it=>{
       const site = it.jobsite || 'Unspecified site';
       (bySite[site] = bySite[site] || []).push(it);
     });
@@ -1985,7 +2076,7 @@ function generateFleetReportHtml(){
 
   if(include('bytype')){
     const byType = {};
-    inventory.forEach(it=>{
+    visibleInventory().forEach(it=>{
       const t = byType[it.type] = byType[it.type] || {total:0, shop:0, job:0};
       t.total++;
       if(isHomeStatus(it.status)) t.shop++;
@@ -2000,7 +2091,7 @@ function generateFleetReportHtml(){
   }
 
   if(include('overdue')){
-    const overdueItems = inventory.filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
+    const overdueItems = visibleInventory().filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
     html += `<div class="report-section"><div class="report-h">Overdue</div>`;
     if(overdueItems.length===0){
       html += `<p>Nothing overdue right now.</p>`;
@@ -2022,12 +2113,12 @@ function renderReports(){
   const statWrap = document.getElementById('reportStatRow');
   if(!statWrap) return; // view not in DOM yet on first paint
 
-  const shop = inventory.filter(i=>isHomeStatus(i.status)).length;
-  const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
-  const maint = inventory.filter(i=>i.status==='Maintenance').length;
-  const missing = inventory.filter(i=>i.status==='Missing').length;
+  const shop = visibleInventory().filter(i=>isHomeStatus(i.status)).length;
+  const jobsite = visibleInventory().filter(i=>i.status==='Jobsite').length;
+  const maint = visibleInventory().filter(i=>i.status==='Maintenance').length;
+  const missing = visibleInventory().filter(i=>i.status==='Missing').length;
   statWrap.innerHTML = `
-    <div class="stat-card-light"><div class="n">${inventory.length}</div><div class="l">Total fleet</div></div>
+    <div class="stat-card-light"><div class="n">${visibleInventory().length}</div><div class="l">Total fleet</div></div>
     <div class="stat-card-light"><div class="n">${shop}</div><div class="l">In shop</div></div>
     <div class="stat-card-light"><div class="n">${jobsite}</div><div class="l">On jobsites</div></div>
     <div class="stat-card-light ${missing?'alert':''}"><div class="n">${missing}</div><div class="l">Missing</div></div>
@@ -2038,7 +2129,7 @@ function renderReports(){
 
   // --- By job site ---
   const bySite = {};
-  inventory.filter(i=>i.status==='Jobsite').forEach(it=>{
+  visibleInventory().filter(i=>i.status==='Jobsite').forEach(it=>{
     const site = it.jobsite || 'Unspecified site';
     (bySite[site] = bySite[site] || []).push(it);
   });
@@ -2064,7 +2155,7 @@ function renderReports(){
 
   // --- By equipment type ---
   const byType = {};
-  inventory.forEach(it=>{
+  visibleInventory().forEach(it=>{
     const t = byType[it.type] = byType[it.type] || {total:0, shop:0, job:0, maint:0};
     t.total++;
     if(isHomeStatus(it.status)) t.shop++;
@@ -2090,7 +2181,7 @@ function renderReports(){
 
   // --- Overdue ---
   const overdueWrap = document.getElementById('reportOverdue');
-  const overdueItems = inventory.filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
+  const overdueItems = visibleInventory().filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
   if(overdueItems.length===0){
     overdueWrap.innerHTML = `<div class="empty">Nothing overdue right now.</div>`;
   } else {
@@ -2105,7 +2196,7 @@ function renderReports(){
 
 function exportCSV(){
   const cols = ['Asset ID','Type','Make/Model','Serial','Status','Job Site','Assigned Tech','Checked Out Date','Expected Return Date','Condition','Last Maintenance Date','Notes'];
-  const rows = inventory.map(it=>[it.id,it.type,it.model,it.serial,it.status,it.jobsite,it.tech,it.checkedOutDate,it.expectedReturnDate,it.condition,it.lastMaintenanceDate,it.notes]);
+  const rows = visibleInventory().map(it=>[it.id,it.type,it.model,it.serial,it.status,it.jobsite,it.tech,it.checkedOutDate,it.expectedReturnDate,it.condition,it.lastMaintenanceDate,it.notes]);
   const esc = v => `"${String(v==null?'':v).replace(/"/g,'""')}"`;
   const csv = [cols.map(esc).join(','), ...rows.map(r=>r.map(esc).join(','))].join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -2153,6 +2244,7 @@ function openDetail(id){
     <div class="detail-box"><div class="l">Last maintenance</div><div class="v">${fmtDate(it.lastMaintenanceDate)}</div></div>
   `;
   let actions = '';
+  actions += `<button class="btn btn-ghost" onclick="openEditItem('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Edit</button>`;
   if(isHomeStatus(it.status) || it.status==='Maintenance'){
     actions += `<button class="btn btn-cyan" onclick="openCheckout('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>Check out</button>`;
   }
@@ -2169,6 +2261,8 @@ function openDetail(id){
   }
   if(it.status!=='Retired'){
     actions += `<button class="btn btn-ghost" onclick="retireItem('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M8 6V4h8v2"/></svg>Retire</button>`;
+  } else {
+    actions += `<button class="btn btn-ghost" style="color:var(--red);border-color:var(--red);" onclick="deleteItem('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>`;
   }
   document.getElementById('dActions').innerHTML = actions;
 
@@ -2334,7 +2428,7 @@ function renderBulkMoveList(filter){
   const dest = document.getElementById('bulkMoveDest').value;
   // Anything at a home location EXCEPT the chosen destination — no point listing
   // items already sitting where you're sending things.
-  const items = inventory.filter(i=>isHomeStatus(i.status) && i.status!==dest &&
+  const items = visibleInventory().filter(i=>isHomeStatus(i.status) && i.status!==dest &&
     [i.id,i.type,i.model,i.serial,i.barcode].join(' ').toLowerCase().includes(filter))
     .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
   const list = document.getElementById('bulkMoveList');
@@ -2399,6 +2493,57 @@ async function retireItem(id){
   closeModal('modalDetail'); renderAll();
   showToast(`${it.id} retired`);
 }
+const DELETE_RETENTION_DAYS = 30;
+async function deleteItem(id){
+  const it = inventory.find(i=>i.id===id);
+  if(!it) return;
+  if(!confirm(`Delete ${it.id}? It'll move to Recently Deleted for ${DELETE_RETENTION_DAYS} days in case this was a mistake, then it's gone for good.`)) return;
+  it.deletedAt = new Date().toISOString();
+  await saveInventory();
+  closeModal('modalDetail');
+  renderAll();
+  showToast(`${id} deleted — recoverable for ${DELETE_RETENTION_DAYS} days`);
+}
+async function restoreItem(id){
+  const it = inventory.find(i=>i.id===id);
+  if(!it) return;
+  delete it.deletedAt;
+  await saveInventory();
+  renderRecentlyDeleted();
+  renderAll();
+  showToast(`${it.id} restored`);
+}
+function purgeExpiredDeletes(){
+  const cutoff = Date.now() - DELETE_RETENTION_DAYS*86400000;
+  const before = inventory.length;
+  inventory = inventory.filter(i=>{
+    if(!i.deletedAt) return true;
+    return new Date(i.deletedAt).getTime() > cutoff;
+  });
+  if(inventory.length!==before){
+    activityLog = activityLog.filter(a=>inventory.some(i=>i.id===a.id));
+    saveInventory();
+    saveActivity();
+  }
+}
+function openRecentlyDeleted(){
+  renderRecentlyDeleted();
+  openModal('modalRecentlyDeleted');
+}
+function renderRecentlyDeleted(){
+  const list = document.getElementById('recentlyDeletedList');
+  if(!list) return;
+  const deleted = inventory.filter(i=>i.deletedAt).sort((a,b)=> new Date(b.deletedAt)-new Date(a.deletedAt));
+  document.getElementById('recentlyDeletedCount').textContent = deleted.length;
+  if(deleted.length===0){ list.innerHTML = `<div class="empty">Nothing in here right now.</div>`; return; }
+  list.innerHTML = deleted.map(it=>{
+    const daysLeft = DELETE_RETENTION_DAYS - Math.floor((Date.now()-new Date(it.deletedAt).getTime())/86400000);
+    return `<div class="team-row">
+      <div class="nm"><div class="avatar">${initials(it.type||'EQ')}</div>${it.id} — ${it.type}${it.model? ' · '+it.model:''} <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${Math.max(0,daysLeft)}d left)</span></div>
+      <button class="btn btn-cyan" style="width:auto;padding:6px 14px;font-size:12px;" onclick="restoreItem('${it.id}')">Restore</button>
+    </div>`;
+  }).join('');
+}
 
 /* ============ ADD ITEM ============ */
 function openAddItem(){
@@ -2447,6 +2592,46 @@ async function confirmAddItem(){
   showToast(`${id} added — print a label with this code`);
 }
 
+function openEditItem(id){
+  const it = inventory.find(i=>i.id===id);
+  if(!it) return;
+  currentDetailId = id;
+  const types = [...new Set(inventory.map(i=>i.type))];
+  document.getElementById('typeList').innerHTML = types.map(t=>`<option value="${t}">`).join('');
+  document.getElementById('editType').value = it.type || '';
+  document.getElementById('editId').value = it.id;
+  document.getElementById('editModel').value = it.model || '';
+  document.getElementById('editSerial').value = it.serial || '';
+  document.getElementById('editPurchase').value = it.purchaseDate || '';
+  closeModal('modalDetail');
+  openModal('modalEditItem');
+}
+async function confirmEditItem(){
+  const oldId = currentDetailId;
+  const it = inventory.find(i=>i.id===oldId);
+  if(!it) return;
+  const newId = document.getElementById('editId').value.trim().toUpperCase();
+  const type = document.getElementById('editType').value.trim();
+  if(!type || !newId){ showToast('Type and Asset ID are required'); return; }
+  if(newId!==oldId && inventory.some(i=>i.id===newId)){
+    showToast('That Asset ID is already in use by another item');
+    return;
+  }
+  it.type = type;
+  it.model = document.getElementById('editModel').value.trim();
+  it.serial = document.getElementById('editSerial').value.trim();
+  it.purchaseDate = document.getElementById('editPurchase').value;
+  if(newId!==oldId){
+    it.id = newId;
+    activityLog.forEach(a=>{ if(a.id===oldId) a.id = newId; });
+    await saveActivity();
+  }
+  await saveInventory();
+  closeModal('modalEditItem');
+  renderAll();
+  showToast(newId!==oldId ? `Updated — ID changed from ${oldId} to ${newId}` : `${newId} updated`);
+}
+
 /* ============ JOB KIT (bulk checkout) ============ */
 let kitReturnToClient = null;
 async function openJobKit(returnToClient){
@@ -2473,7 +2658,7 @@ function prefillKitAddress(){
 }
 function renderKitList(filter){
   filter = (filter||'').toLowerCase();
-  const shopItems = inventory.filter(i=>isHomeStatus(i.status) &&
+  const shopItems = visibleInventory().filter(i=>isHomeStatus(i.status) &&
     [i.id,i.type,i.model,i.serial,i.barcode].join(' ').toLowerCase().includes(filter))
     .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
   const list = document.getElementById('kitList');
@@ -2689,7 +2874,7 @@ function renderTeam(){
   }
   const sorted = [...personnel].sort((a,b)=>a.localeCompare(b));
   list.innerHTML = sorted.map(name=>{
-    const activeCount = inventory.filter(it=>it.status==='Jobsite' && it.tech===name).length;
+    const activeCount = visibleInventory().filter(it=>it.status==='Jobsite' && it.tech===name).length;
     return `<div class="team-row">
       <div class="nm"><div class="avatar">${initials(name)}</div>${name}${activeCount? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${activeCount} out)</span>`:''}</div>
       <button class="del-btn" onclick="removePersonnel('${name.replace(/'/g,"\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -2733,7 +2918,7 @@ function renderLocations(){
   rows.push(`<div class="team-row"><div class="nm"><div class="avatar">SH</div>Shop <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(built in)</span></div><button class="btn btn-ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeModal('modalLocations');openBulkMove('Shop')">Load</button></div>`);
   const sorted = [...customLocations].sort((a,b)=>a.localeCompare(b));
   sorted.forEach(name=>{
-    const count = inventory.filter(it=>it.status===name).length;
+    const count = visibleInventory().filter(it=>it.status===name).length;
     rows.push(`<div class="team-row">
       <div class="nm"><div class="avatar">${initials(name)}</div>${escapeHtml(name)}${count? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${count} item${count!==1?'s':''})</span>`:''}</div>
       <div style="display:flex;gap:6px;align-items:center;">
@@ -2758,7 +2943,7 @@ async function confirmAddLocation(){
   showToast(`${name} added`);
 }
 async function removeLocation(name){
-  const count = inventory.filter(it=>it.status===name).length;
+  const count = visibleInventory().filter(it=>it.status===name).length;
   const msg = count
     ? `${count} item${count!==1?'s':''} currently show ${name} as their location. Remove it from the list anyway? (Those items keep their current status — reassign them from their detail page.)`
     : `Remove "${name}" from the locations list?`;
