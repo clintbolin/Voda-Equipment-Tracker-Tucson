@@ -12,7 +12,6 @@
 <style>
 :root{
   --navy:#0A1F3D;
-  --navy-icon:#0A1F3D; /* same as navy in light mode; lightened in dark mode below for icons sitting on --gray-bg/--blue-bg/--card, which go dark there */
   --navy-light:#14335F;
   --cyan:#00B4D8;
   --cyan-dark:#0090AD;
@@ -44,7 +43,6 @@
   --blue-bg:#0F2440;
   --amber-bg:#332711;
   --red-bg:#3A1620;
-  --navy-icon:#5DD8EC;
 }
 [data-theme="dark"] .brand-mark{ background:rgba(255,255,255,0.06); }
 [data-theme="dark"] .field input,
@@ -144,12 +142,6 @@ header.top::after{
   margin-left:auto;background:#9C2E42;color:#fff;border:none;border-radius:8px;
   padding:6px 10px;font-size:12px;font-weight:600;
 }
-.banner-amber{ background:var(--amber-bg); border-color:#F0D9A8; color:#8A5A00; }
-.banner-amber button{ background:#8A5A00; }
-[data-theme="dark"] .banner{ border-color:#5C2430; color:#F3B4C2; }
-[data-theme="dark"] .banner button{ background:#F3B4C2; color:#3A1620; }
-[data-theme="dark"] .banner-amber{ border-color:#5C4A1E; color:#F0CE8A; }
-[data-theme="dark"] .banner-amber button{ background:#F0CE8A; color:#332711; }
 
 /* quick actions */
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -190,7 +182,7 @@ header.top::after{
 .eq-group{margin-bottom:6px;}
 .eq-group-head{display:flex;align-items:center;gap:8px;padding:10px 4px 6px;cursor:pointer;user-select:none;}
 .eq-group-head .ic{width:26px;height:26px;border-radius:7px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.eq-group-head .ic svg{width:14px;height:14px;stroke:var(--navy-icon);}
+.eq-group-head .ic svg{width:14px;height:14px;stroke:var(--navy);}
 .eq-group-head .nm{font-weight:700;font-size:13.5px;flex:1;}
 .eq-group-head .ct{font-size:12px;color:var(--muted);}
 .eq-group-head .chev{width:14px;height:14px;stroke:var(--muted);transition:transform .15s;}
@@ -312,7 +304,6 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   display:none;align-items:flex-end;justify-content:center;
 }
 .overlay.active{display:flex;}
-#modalScan{z-index:200;} /* scanner opens on top of Job Kit / Move / Return, which stay open underneath */
 .sheet{
   background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;
   max-height:92vh;overflow-y:auto;padding:6px 18px 24px;
@@ -336,6 +327,17 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
 .field textarea{resize:vertical;min-height:60px;}
 .field .hint{font-size:11px;color:var(--muted);margin-top:5px;}
 .hint{font-size:11px;color:var(--muted);background:var(--gray-bg);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.4;}
+.help-section{margin-bottom:22px;}
+.help-h{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.help-h .num{width:24px;height:24px;border-radius:7px;background:var(--navy);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.help-p{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px;}
+.help-step{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+.help-step:last-child{border-bottom:none;}
+.help-step .n{width:22px;height:22px;border-radius:50%;background:var(--cyan);color:var(--navy);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.help-step .t{font-size:13px;font-weight:700;color:var(--ink);}
+.help-step .d{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.help-bullet{font-size:13px;color:var(--ink);line-height:1.6;padding-left:16px;position:relative;margin-bottom:4px;}
+.help-bullet::before{content:"";position:absolute;left:2px;top:8px;width:4px;height:4px;border-radius:50%;background:var(--muted);}
 .seg{display:flex;background:var(--gray-bg);border-radius:12px;padding:3px;gap:3px;}
 .seg button{flex:1;border:none;background:transparent;padding:9px 8px;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--muted);}
 .seg button.active{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,0.12);}
@@ -389,29 +391,20 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   body.printing-reports #reportsPrintTitle{ display:block !important; }
 }
 
-/* ===== formal fleet report document =====
-   Always renders as a light printed page, independent of the app's
-   light/dark theme — this is meant to look like a document you'd print
-   or attach to an email, not a themed in-app screen. Every color below
-   is a fixed value on purpose, not a --variable, so dark mode can't
-   turn the text the same color as its background. */
-.fleet-report-doc{
-  font-family:Georgia,'Times New Roman',serif; color:#1a1a1a;
-  background:#ffffff; border-radius:14px; padding:20px 18px 24px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.25);
-}
-.report-letterhead{ display:flex; align-items:center; gap:14px; border-bottom:3px solid #0A1F3D; padding-bottom:14px; margin-bottom:6px; }
+/* ===== formal fleet report document ===== */
+.fleet-report-doc{ font-family:Georgia,'Times New Roman',serif; color:#1a1a1a; padding:4px 2px 20px; }
+.report-letterhead{ display:flex; align-items:center; gap:14px; border-bottom:3px solid var(--navy); padding-bottom:14px; margin-bottom:6px; }
 .report-letterhead img{ width:46px; height:46px; border-radius:10px; }
-.report-co-name{ font-size:15px; font-weight:700; color:#0A1F3D; font-family:-apple-system,sans-serif; }
-.report-doc-title{ font-size:12px; color:#6B7684; font-family:-apple-system,sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
-.report-meta{ font-size:11px; color:#6B7684; font-family:-apple-system,sans-serif; margin-bottom:18px; }
+.report-co-name{ font-size:15px; font-weight:700; color:var(--navy); font-family:-apple-system,sans-serif; }
+.report-doc-title{ font-size:12px; color:var(--muted); font-family:-apple-system,sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
+.report-meta{ font-size:11px; color:var(--muted); font-family:-apple-system,sans-serif; margin-bottom:18px; }
 .fleet-report-doc .report-section{ margin-bottom:20px; break-inside:avoid; }
-.fleet-report-doc .report-h{ font-size:14px; font-weight:700; color:#0A1F3D; border-bottom:1.5px solid #E2E6EB; padding-bottom:5px; margin-bottom:8px; font-family:-apple-system,sans-serif; }
-.fleet-report-doc .report-subh{ font-size:12px; font-weight:700; color:#1a1a1a; margin:12px 0 6px; font-family:-apple-system,sans-serif; }
+.fleet-report-doc .report-h{ font-size:14px; font-weight:700; color:var(--navy); border-bottom:1.5px solid var(--line); padding-bottom:5px; margin-bottom:8px; font-family:-apple-system,sans-serif; }
+.fleet-report-doc .report-subh{ font-size:12px; font-weight:700; color:var(--ink); margin:12px 0 6px; font-family:-apple-system,sans-serif; }
 .fleet-report-doc ul{ margin:0; padding-left:20px; }
-.fleet-report-doc li{ font-size:12.5px; line-height:1.7; color:#1a1a1a; }
-.fleet-report-doc p{ font-size:12.5px; line-height:1.6; margin:0; color:#1a1a1a; }
-.report-footer{ margin-top:24px; padding-top:10px; border-top:1px solid #E2E6EB; font-size:10px; color:#6B7684; font-family:-apple-system,sans-serif; text-align:center; }
+.fleet-report-doc li{ font-size:12.5px; line-height:1.7; }
+.fleet-report-doc p{ font-size:12.5px; line-height:1.6; margin:0; }
+.report-footer{ margin-top:24px; padding-top:10px; border-top:1px solid var(--line); font-size:10px; color:var(--muted); font-family:-apple-system,sans-serif; text-align:center; }
 
 .btn-row{display:flex;gap:10px;margin-top:6px;}
 .btn{
@@ -441,31 +434,12 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
 
 /* scan */
 .scan-wrap{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:3/4;max-height:52vh;}
-.scan-wrap video,.scan-wrap #scanReader{width:100%;height:100%;object-fit:cover;}
-.scan-wrap #scanReader video{width:100%!important;height:100%!important;object-fit:cover;}
-.scan-wrap #scanReader img{display:none;} /* hide the library's default flash/torch icon graphics we don't use */
+.scan-wrap video{width:100%;height:100%;object-fit:cover;}
 .scan-frame{
   position:absolute;inset:16%;border:2.5px solid var(--cyan);border-radius:18px;
   box-shadow:0 0 0 2000px rgba(0,0,0,0.35);
-  transition:border-color .15s, box-shadow .15s;
-}
-.scan-frame.scan-hit{
-  border-color:var(--green);
-  box-shadow:0 0 0 2000px rgba(0,0,0,0.35), 0 0 24px 4px var(--green);
-}
-.scan-frame.scan-miss{
-  border-color:var(--red);
-  box-shadow:0 0 0 2000px rgba(0,0,0,0.35), 0 0 24px 4px var(--red);
 }
 .scan-status{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:12px;font-weight:600;}
-.scan-last-result{
-  min-height:40px;margin-top:10px;padding:10px 14px;border-radius:12px;
-  font-size:13.5px;font-weight:700;text-align:center;display:none;
-  align-items:center;justify-content:center;gap:8px;
-}
-.scan-last-result.show{display:flex;}
-.scan-last-result.ok{background:var(--green-bg,#e6f7ee);color:var(--green,#1a9d5c);}
-.scan-last-result.fail{background:var(--red-bg,#fdeceb);color:var(--red,#d6455b);}
 .or-div{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;}
 .or-div::before,.or-div::after{content:"";flex:1;height:1px;background:var(--line);}
 
@@ -516,7 +490,6 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <!-- HOME -->
   <div class="view active" id="view-home">
     <div id="overdueBanner"></div>
-    <div id="lowStockBanner"></div>
     <div class="section-title">Quick actions</div>
     <div class="quick-grid">
       <button class="quick-btn primary" onclick="openScan()">
@@ -528,11 +501,6 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg></div>
         <div class="t">Load a job kit</div>
         <div class="d">Send multiple items out</div>
-      </button>
-      <button class="quick-btn" onclick="openBulkMove()">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4-4 4 4M9 5v14M15 15l4 4 4-4M19 19V5"/></svg></div>
-        <div class="t">Move equipment</div>
-        <div class="d">Load a van, or move several at once</div>
       </button>
       <button class="quick-btn" onclick="switchView('inventory')">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
@@ -549,15 +517,10 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <div class="t">Manage team</div>
         <div class="d">Add or remove personnel</div>
       </button>
-      <button class="quick-btn" onclick="openLocations()">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
-        <div class="t">Manage locations</div>
-        <div class="d">Vans, trailers, shop areas</div>
-      </button>
-      <button class="quick-btn" onclick="openRecentlyDeleted()">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/><path d="M10 11v6M14 11v6"/></svg></div>
-        <div class="t">Recently deleted</div>
-        <div class="d">Restore items removed by mistake</div>
+      <button class="quick-btn" onclick="openHelp()">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="t">Help &amp; guide</div>
+        <div class="d">How to use this app</div>
       </button>
     </div>
 
@@ -767,11 +730,6 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div class="hint">Doesn't have to be who checked it out — just whoever's bringing it back right now.</div>
   </div>
   <div class="field">
-    <label>Return to</label>
-    <select id="inLocation"></select>
-    <div class="hint">Where this is physically landing — the shop, a van, wherever it's actually going.</div>
-  </div>
-  <div class="field">
     <label>Condition on return</label>
     <select id="inCondition">
       <option>New</option><option selected>Good</option><option>Fair</option><option>Needs Cleaning</option><option>Needs Repair</option><option>Out of Service</option>
@@ -807,7 +765,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openEditClient()" style="cursor:pointer;" title="Edit job"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printClientReport()" style="cursor:pointer;" title="Print exactly what's on screen"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="saveClientReport()" style="cursor:pointer;" title="Save as PDF to attach to email, Workiz, etc."><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openClientFormalReport()" style="cursor:pointer;" title="Formal report, all details for this job"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openClientFormalReport()" style="cursor:pointer;" title="Formal report, all details for this job"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="deleteClient()" style="cursor:pointer;" title="Delete job"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       <button class="close-x" onclick="closeModal('modalClientDetail')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -821,7 +779,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
   <div id="cdReturnBar" style="display:none;position:sticky;top:0;z-index:5;background:#fff;padding:8px 0;margin-bottom:6px;border-bottom:1px solid var(--line);">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <span id="cdReturnCount" style="font-size:12.5px;font-weight:700;color:var(--navy-icon);">0 selected</span>
+      <span id="cdReturnCount" style="font-size:12.5px;font-weight:700;color:var(--navy);">0 selected</span>
       <a href="#" onclick="selectAllClientReturn();return false;" style="font-size:11.5px;color:var(--cyan-dark);font-weight:700;text-decoration:none;">Select all</a>
       <div style="display:flex;gap:8px;">
         <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openScanForClientReturn()">
@@ -890,11 +848,10 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <button class="close-x" onclick="closeScan()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="scan-wrap" id="scanWrap">
-    <div id="scanReader"></div>
+    <video id="scanVideo" playsinline muted autoplay></video>
     <div class="scan-frame"></div>
     <div class="scan-status" id="scanStatusTxt">Starting camera…</div>
   </div>
-  <div id="scanLastResult" class="scan-last-result"></div>
   <div class="or-div">or enter code manually</div>
   <div class="field" style="margin-bottom:6px;">
     <input id="manualCode" placeholder="e.g. DH-005" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')manualLookup()">
@@ -934,37 +891,6 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmAddItem()">Add to inventory</button></div>
 </div></div>
 
-<!-- Edit equipment -->
-<div class="overlay" id="modalEditItem"><div class="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-head">
-    <div><div class="sheet-title">Edit equipment</div><div class="sheet-sub">Fix a typo without retiring and re-adding the unit</div></div>
-    <button class="close-x" onclick="closeModal('modalEditItem')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-  <div class="field">
-    <label>Equipment type</label>
-    <input list="typeList" id="editType">
-  </div>
-  <div class="field">
-    <label>Asset ID</label>
-    <input id="editId" style="text-transform:uppercase;">
-    <div class="hint">Only change this if it was mistyped. If you've already printed a barcode/QR label for this item, changing the ID means the old label will stop scanning until you reprint it.</div>
-  </div>
-  <div class="field">
-    <label>Make / model</label>
-    <input id="editModel">
-  </div>
-  <div class="field">
-    <label>Serial number</label>
-    <input id="editSerial">
-  </div>
-  <div class="field">
-    <label>Purchase date</label>
-    <input type="date" id="editPurchase">
-  </div>
-  <div class="btn-row"><button class="btn btn-primary" onclick="confirmEditItem()">Save changes</button></div>
-</div></div>
-
 <!-- Manage Team -->
 <div class="overlay" id="modalTeam"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -982,6 +908,90 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div class="section-title" style="margin-top:6px;">Current team (<span id="teamCount">0</span>)</div>
   <div id="teamList"></div>
   <div class="hint" style="margin-top:10px;">Removing someone here only takes them out of the assignment list — past job history stays exactly as recorded.</div>
+</div></div>
+
+<!-- Send to Maintenance -->
+<div class="overlay" id="modalSendMaintenance"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Send to maintenance</div><div class="sheet-sub" id="smSub">—</div></div>
+    <button class="close-x" onclick="closeModal('modalSendMaintenance')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="field">
+    <label>What's wrong with it?</label>
+    <input id="smNotes" placeholder="e.g. Won't power on, cracked housing">
+  </div>
+  <div class="hint">This takes it out of Shop so it can't be checked out to a job until it's marked fixed.</div>
+  <div class="btn-row"><button class="btn btn-amber" onclick="confirmSendMaintenance()">Send to maintenance</button></div>
+</div></div>
+
+<!-- Help & Guide -->
+<div class="overlay" id="modalHelp"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Help &amp; Guide</div><div class="sheet-sub">How to use the Equipment Tracker</div></div>
+    <button class="close-x" onclick="closeModal('modalHelp')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">1</span>Getting started</div>
+    <div class="help-p">The app is a bookmarked web link — nothing to install. The first time, tap Share (iPhone) or the &#8942; menu (Android), then "Add to Home Screen," so it opens like a normal app icon from then on.</div>
+    <div class="hint">If the app doesn't load, check your internet connection first — it needs a live connection to sync with the shop's records.</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">2</span>Checking equipment OUT to a job</div>
+    <div class="help-p">Always use "Load a Job Kit," even for a single item — it keeps every checkout consistent and logged the same way.</div>
+    <div class="help-step"><div class="n">1</div><div><div class="t">Tap "Load a Job Kit"</div><div class="d">Found on the Home screen.</div></div></div>
+    <div class="help-step"><div class="n">2</div><div><div class="t">Enter the Customer name</div><div class="d">Repeat customers auto-fill their saved address.</div></div></div>
+    <div class="help-step"><div class="n">3</div><div><div class="t">Enter the address</div><div class="d">Only needed for a new customer.</div></div></div>
+    <div class="help-step"><div class="n">4</div><div><div class="t">Assign a technician and set an expected return date</div></div></div>
+    <div class="help-step"><div class="n">5</div><div><div class="t">Check the box next to every item going out</div><div class="d">Scroll to find each item, or use the search field at the top of the list.</div></div></div>
+    <div class="help-step"><div class="n">6</div><div><div class="t">Tap "Check out selected items"</div><div class="d">The job now appears under Active Jobs.</div></div></div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">3</span>Checking equipment BACK IN</div>
+    <div class="help-step"><div class="n">1</div><div><div class="t">Tap "Jobs" on the bottom bar</div></div></div>
+    <div class="help-step"><div class="n">2</div><div><div class="t">Find the customer under Active Jobs</div><div class="d">Tap to open their job.</div></div></div>
+    <div class="help-step"><div class="n">3</div><div><div class="t">Check off what's coming back</div><div class="d">Or tap "Select all," or use "Scan" to scan items in one at a time.</div></div></div>
+    <div class="help-step"><div class="n">4</div><div><div class="t">Tap "Return selected"</div></div></div>
+    <div class="help-step"><div class="n">5</div><div><div class="t">Set the condition of the equipment and confirm</div><div class="d">Be honest here — this is how damaged or dirty equipment gets flagged before it's sent out again.</div></div></div>
+    <div class="hint">If a job's equipment comes back in batches, that's fine — just repeat this each time. The job stays "Active" until everything on it has been returned.</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">4</span>Equipment in Maintenance</div>
+    <div class="help-p">Equipment can go to Maintenance two ways: automatically, if it's flagged "Needs Repair" or "Out of Service" at check-in from a job — or directly from the shop, if something's found damaged before it ever goes out. Open the item and tap "Send to maintenance" to do that.</div>
+    <div class="help-p">Either way, it cannot be checked out directly to a job while in Maintenance. Once it's actually fixed, open the item and tap "Mark fixed — return to shop." Only then can it be checked out again.</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">5</span>Scanning &amp; finding equipment</div>
+    <div class="help-bullet">Tap "Scan" on Home to look up a specific item fast — point the camera at its tag.</div>
+    <div class="help-bullet">Use the Inventory tab to search by name, type, or model, or filter by status (Shop, On a Job, Missing).</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">6</span>Job history &amp; reports</div>
+    <div class="help-bullet">Open any job to see a two-column report — everything Sent Out, and everything Returned to Shop, each with its date.</div>
+    <div class="help-bullet">Reports can be printed or saved as a PDF directly from the job page.</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">7</span>Adding equipment &amp; managing the team</div>
+    <div class="help-bullet"><b>Add Equipment</b> (Home) — enter the type, model, and an ID tag. The ID tag is what gets scanned, so make sure it's applied to the item itself.</div>
+    <div class="help-bullet"><b>Manage Team</b> (Home) — keep this current; it's what populates "assigned to" during checkout.</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-h"><span class="num">8</span>Key terms</div>
+    <div class="help-bullet"><b>Job</b> — a customer and address that equipment is checked out to.</div>
+    <div class="help-bullet"><b>Active Job</b> — currently has equipment checked out to it.</div>
+    <div class="help-bullet"><b>Post Job</b> — everything on it has been returned to the shop.</div>
+  </div>
+
+  <div class="hint" style="margin-top:4px;">Questions this guide doesn't answer? Ask your manager — this covers the day-to-day basics, not every edge case.</div>
 </div></div>
 <div class="overlay" id="modalKit"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -1013,13 +1023,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
   <div class="field">
     <label>Select equipment (shop items only)</label>
-    <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <input placeholder="Filter list..." oninput="renderKitList(this.value)" style="flex:1;margin-bottom:0;">
-      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);white-space:nowrap;" onclick="openScanForJobKit()">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-        Scan
-      </button>
-    </div>
+    <input placeholder="Filter list..." oninput="renderKitList(this.value)" style="margin-bottom:8px;">
     <div class="kit-list" id="kitList"></div>
   </div>
   <div class="kit-selected-bar">
@@ -1028,86 +1032,8 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
 </div></div>
 
-<!-- Recently Deleted -->
-<div class="overlay" id="modalRecentlyDeleted"><div class="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-head">
-    <div><div class="sheet-title">Recently deleted</div><div class="sheet-sub">Deleted items stay here for 30 days before they're gone for good</div></div>
-    <button class="close-x" onclick="closeModal('modalRecentlyDeleted')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-  <div class="section-title">Deleted items (<span id="recentlyDeletedCount">0</span>)</div>
-  <div id="recentlyDeletedList"></div>
-</div></div>
-
-<!-- Manage Locations -->
-<div class="overlay" id="modalLocations"><div class="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-head">
-    <div><div class="sheet-title">Manage locations</div><div class="sheet-sub">Vans, trailers, shop areas — anywhere equipment sits when it's not on a job</div></div>
-    <button class="close-x" onclick="closeModal('modalLocations')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-  <div class="field">
-    <label>Add a location</label>
-    <div style="display:flex;gap:8px;">
-      <input id="locationNameInput" placeholder="e.g. Van 3, Trailer, Storage Unit" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmAddLocation();}">
-      <button class="btn btn-cyan" style="width:auto;padding:0 18px;" onclick="confirmAddLocation()">Add</button>
-    </div>
-  </div>
-  <div class="section-title" style="margin-top:6px;">Current locations (<span id="locationCount">0</span>)</div>
-  <div id="locationList"></div>
-  <div class="hint" style="margin-top:10px;">"Shop" is built in and can't be removed. Removing a location here doesn't move any equipment currently sitting there — reassign those items first from their detail page.</div>
-</div></div>
-
-<!-- Move item -->
-<div class="overlay" id="modalMove"><div class="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-head">
-    <div><div class="sheet-title">Move</div><div class="sheet-sub" id="moveSub">—</div></div>
-    <button class="close-x" onclick="closeModal('modalMove')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-  <div class="field">
-    <label>Move to</label>
-    <select id="moveDest"></select>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-cyan" onclick="confirmMove()">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-      Confirm move
-    </button>
-  </div>
-</div></div>
-
-<!-- Bulk Move (multiple items to a van/shop/location at once) -->
-<div class="overlay" id="modalBulkMove"><div class="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-head">
-    <div><div class="sheet-title">Move equipment</div><div class="sheet-sub">Send multiple items to a van, the shop, or anywhere else at once</div></div>
-    <button class="close-x" onclick="closeModal('modalBulkMove')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-  <div class="field">
-    <label>Move to</label>
-    <select id="bulkMoveDest"></select>
-  </div>
-  <div class="field">
-    <label>Select equipment</label>
-    <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <input placeholder="Filter list..." oninput="renderBulkMoveList(this.value)" style="flex:1;margin-bottom:0;">
-      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);white-space:nowrap;" onclick="openScanForBulkMove()">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-        Scan
-      </button>
-    </div>
-    <div class="kit-list" id="bulkMoveList"></div>
-  </div>
-  <div class="kit-selected-bar">
-    <div class="hint" id="bulkMoveCount" style="margin-bottom:8px;">0 items selected</div>
-    <button class="btn btn-cyan" style="width:100%;" onclick="confirmBulkMove()">Move selected items</button>
-  </div>
-</div></div>
-
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="toastMsg"></span></div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 /* ============ DATA / STORAGE ============ */
 const SEED = [{"id": "DH-001", "type": "Dehumidifier", "model": "Phoenix Romax XL", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-002", "type": "Dehumidifier", "model": "Phoenix Romax XL", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Mike Alverez", "tech": "Miguel Perez", "checkedOutDate": "2026-08-02", "expectedReturnDate": "2026-08-08", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "DH-003", "type": "Dehumidifier", "model": "Phoenix Romax XL", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-004", "type": "Dehumidifier", "model": "Phoenix Romax XL", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-005", "type": "Dehumidifier", "model": "Phoenix R-200", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Miracle Point Apartments: 4105", "tech": "Arturo Hoyos", "checkedOutDate": "2026-08-03", "expectedReturnDate": "2026-08-07", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "DH-006", "type": "Dehumidifier", "model": "Phoenix R-201", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Miracle Point Apartments: 4105", "tech": "Arturo Hoyos", "checkedOutDate": "2026-08-03", "expectedReturnDate": "2026-08-07", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "DH-007", "type": "Dehumidifier", "model": "Phoenix R-202", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Miracle Point Apartments: 4101", "tech": "Arturo Hoyos", "checkedOutDate": "2026-08-03", "expectedReturnDate": "2026-08-07", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "DH-008", "type": "Dehumidifier", "model": "Phoenix R-203", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-009", "type": "Dehumidifier", "model": "Phoenix R-204", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-010", "type": "Dehumidifier", "model": "Orion 10270GR-US", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-011", "type": "Dehumidifier", "model": "DRIEAZ F600-R1", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-012", "type": "Dehumidifier", "model": "DRIEAZ F413-R1", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-013", "type": "Dehumidifier", "model": "Phoenix DryMax BLE", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "DH-014", "type": "Dehumidifier", "model": "Phoenix DryMax BLE", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-001", "type": "Air Scrubber", "model": "DRIEAZ Hepa 700", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-002", "type": "Air Scrubber", "model": "DRIEAZ Hepa 700", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Mike Alverez", "tech": "Miguel Perez", "checkedOutDate": "2026-08-02", "expectedReturnDate": "2026-08-06", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "AS-003", "type": "Air Scrubber", "model": "DRIEAZ Hepa 700", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Mike Alverez", "tech": "Miguel Perez", "checkedOutDate": "2026-08-02", "expectedReturnDate": "2026-08-06", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "AS-004", "type": "Air Scrubber", "model": "DRIEAZ Hepa 700", "serial": "", "purchaseDate": "", "status": "Jobsite", "jobsite": "Miracle Point Apartments: 4105", "tech": "Arturo Hoyos", "checkedOutDate": "2026-08-03", "expectedReturnDate": "2026-08-07", "condition": "Good", "lastMaintenanceDate": "2026-07-15", "notes": ""}, {"id": "AS-005", "type": "Air Scrubber", "model": "DRIEAZ Hepa 700", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-006", "type": "Air Scrubber", "model": "DRIEAZ Hepa 700", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-007", "type": "Air Scrubber", "model": "DRIEAZ Hepa 500", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-008", "type": "Air Scrubber", "model": "BlueDri AirShield 550 ", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-009", "type": "Air Scrubber", "model": "BlueDri AirShield 550", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "AS-010", "type": "Air Scrubber", "model": "BlueDri AirShield 550", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0001", "type": "Air Mover", "model": "Phoenix", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0002", "type": "Air Mover", "model": "Phoenix", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0003", "type": "Air Mover", "model": "Phoenix", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0004", "type": "Air Mover", "model": "Phoenix", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0005", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0006", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0007", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0008", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0009", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0010", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0011", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0012", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0013", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0014", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0015", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0016", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0017", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0018", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0019", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0020", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0021", "type": "Air Mover", "model": "OMNIDRY", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0022", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0023", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0024", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0025", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0026", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0027", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0028", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0029", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0030", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0031", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0032", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0033", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0034", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0035", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0036", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0037", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0038", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0039", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0040", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0041", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0042", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0043", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0044", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0045", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0046", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0047", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0048", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0049", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0050", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0051", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0052", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0053", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0054", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0055", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0056", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0057", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0058", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0059", "type": "Air Mover", "model": "OMNI Pro", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0060", "type": "Air Mover", "model": "OMNI Pro", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0061", "type": "Air Mover", "model": "OMNI Pro", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0062", "type": "Air Mover", "model": "OMNI Pro", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0063", "type": "Air Mover", "model": "OMNI Pro", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0064", "type": "Air Mover", "model": "OMNI Pro", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}, {"id": "A-0065", "type": "Air Mover", "model": "Syclone", "serial": "", "purchaseDate": "", "status": "Shop", "jobsite": "", "tech": "", "checkedOutDate": "", "expectedReturnDate": "", "condition": "Good", "lastMaintenanceDate": "", "notes": ""}];
@@ -1126,18 +1052,15 @@ const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !
 const REFRESH_INTERVAL_MS = 20000;
 
 let inventory = [];
-function visibleInventory(){ return inventory.filter(i=>!i.deletedAt); }
 let activityLog = [];
 let jobsitesKnown = new Set();
 let personnel = [...KNOWN_TECHS];
 let techsKnown = new Set(KNOWN_TECHS);
-let customLocations = ["Van 1", "Van 2", "Misc"];
-let backendSupportsLocations = true;
 let currentDetailId = null;
-let scannerInstance = null; // Html5Qrcode instance — works on iPhone Safari and Android Chrome alike, unlike the native BarcodeDetector API
+let scanStream = null;
+let scanRAF = null;
 let scanMode = 'lookup'; // 'lookup' | 'clientReturn'
 let kitSelected = new Set();
-let bulkMoveSelected = new Set();
 let currentView = 'home';
 let lastLoadOk = false;
 
@@ -1158,17 +1081,6 @@ function fmtDate(s){
 }
 function isOverdue(item){
   return item.status==='Jobsite' && item.expectedReturnDate && item.expectedReturnDate < todayStr();
-}
-// Every place equipment can sit when it's not checked out to a job: the
-// built-in Shop plus whatever vans/trailers/etc. have been added.
-function homeLocations(){ return ["Shop", ...customLocations]; }
-function isHomeStatus(status){ return homeLocations().includes(status); }
-function daysOut(item){
-  if(!item.checkedOutDate) return null;
-  const out = new Date(item.checkedOutDate+"T00:00:00");
-  if(isNaN(out)) return null;
-  const diffMs = new Date(todayStr()+"T00:00:00") - out;
-  return Math.max(0, Math.round(diffMs / 86400000));
 }
 
 function setSyncing(on, failed){
@@ -1208,7 +1120,6 @@ async function loadData(silent){
       await saveInventory();
     }
     activityLog = data.activity || [];
-    purgeExpiredDeletes();
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
     if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
     clientAddresses = {};
@@ -1220,15 +1131,6 @@ async function loadData(silent){
       }
     } else {
       (data.clients||[]).forEach(c=>{ if(c.name) clientAddresses[c.name] = c.address||''; });
-    }
-
-    backendSupportsLocations = data.locations!==undefined;
-    if(backendSupportsLocations){
-      customLocations = (data.locations && data.locations.length) ? data.locations : ["Van 1","Van 2","Misc"];
-      if(!data.locations || !data.locations.length){ await saveLocations(); }
-    } else if(!window._warnedNoLocationsBackend){
-      window._warnedNoLocationsBackend = true;
-      showToast('Custom locations are saved on this device only — update your Apps Script backend to sync them');
     }
 
     jobsitesKnown = new Set();
@@ -1287,13 +1189,6 @@ async function saveClientAddresses(){
     setSyncing(false);
   }catch(e){ console.error('save client addresses failed', e); setSyncing(false, true); }
 }
-async function saveLocations(){
-  setSyncing(true);
-  try{
-    await apiPost('saveLocations', customLocations);
-    setSyncing(false);
-  }catch(e){ console.error('save locations failed', e); setSyncing(false, true); }
-}
 
 async function saveInventory(){
   setSyncing(true);
@@ -1351,18 +1246,15 @@ function renderAll(){
   renderActivity();
   renderReports();
   renderTeam();
-  renderLocations();
-  renderRecentlyDeleted();
   renderClientsList();
 }
 
 function renderStats(){
-  const items = visibleInventory();
-  const shop = items.filter(i=>isHomeStatus(i.status)).length;
-  const jobsite = items.filter(i=>i.status==='Jobsite').length;
-  const overdue = items.filter(isOverdue).length;
+  const shop = inventory.filter(i=>i.status==='Shop').length;
+  const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
+  const overdue = inventory.filter(isOverdue).length;
   document.getElementById('statRow').innerHTML = `
-    <div class="stat-card"><div class="n">${items.length}</div><div class="l">Total fleet</div></div>
+    <div class="stat-card"><div class="n">${inventory.length}</div><div class="l">Total fleet</div></div>
     <div class="stat-card"><div class="n">${jobsite}</div><div class="l">On jobsites</div></div>
     <div class="stat-card ${overdue? 'alert':''}"><div class="n">${overdue}</div><div class="l">Overdue</div></div>
   `;
@@ -1374,32 +1266,10 @@ function renderStats(){
       <button onclick="switchView('inventory');setStatusFilter('overdue')">Review</button>
     </div>`;
   } else banner.innerHTML='';
-  renderLowStockBanner(items);
-}
-function renderLowStockBanner(items){
-  const banner = document.getElementById('lowStockBanner');
-  if(!banner) return;
-  const active = items.filter(i=>i.status!=='Retired');
-  const byType = {};
-  active.forEach(it=>{
-    byType[it.type] = byType[it.type] || {total:0, available:0};
-    byType[it.type].total++;
-    if(isHomeStatus(it.status)) byType[it.type].available++;
-  });
-  const low = Object.keys(byType).filter(t=>{
-    const {total, available} = byType[t];
-    return available===0 || (available/total) <= 0.2;
-  }).sort();
-  if(low.length===0){ banner.innerHTML=''; return; }
-  banner.innerHTML = `<div class="banner banner-amber">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2.2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
-    <span>Running low: ${low.map(t=>`${t} (${byType[t].available}/${byType[t].total} available)`).join(', ')}</span>
-    <button onclick="switchView('inventory')">Review</button>
-  </div>`;
 }
 
 function renderHome(){
-  const out = visibleInventory().filter(i=>i.status==='Jobsite').sort((a,b)=> (a.expectedReturnDate||'9999').localeCompare(b.expectedReturnDate||'9999'));
+  const out = inventory.filter(i=>i.status==='Jobsite').sort((a,b)=> (a.expectedReturnDate||'9999').localeCompare(b.expectedReturnDate||'9999'));
   const wrap = document.getElementById('homeJobsite');
   if(out.length===0){ wrap.innerHTML = `<div class="empty">Everything's back in the shop.</div>`; return; }
   wrap.innerHTML = out.map(it=>eqCardHTML(it)).join('');
@@ -1414,13 +1284,13 @@ function setJobsCategory(cat, btn){
 }
 function getClientNames(){
   const names = new Set();
-  visibleInventory().forEach(it=>{ if(it.status==='Jobsite' && it.jobsite) names.add(it.jobsite); });
+  inventory.forEach(it=>{ if(it.status==='Jobsite' && it.jobsite) names.add(it.jobsite); });
   activityLog.forEach(a=>{ if(a.jobsite) names.add(a.jobsite); });
   Object.keys(clientAddresses).forEach(n=>names.add(n)); // a client with a saved address should never disappear
   return [...names];
 }
 function getClientItems(name){
-  return visibleInventory().filter(it=>it.status==='Jobsite' && it.jobsite===name);
+  return inventory.filter(it=>it.status==='Jobsite' && it.jobsite===name);
 }
 function getClientTimeline(name){
   return activityLog
@@ -1440,39 +1310,15 @@ function renderClientsList(){
     wrap.innerHTML = `<div class="empty">${q? `No matches for "${q}".` : jobsCategory==='active' ? 'No active jobs right now.' : 'No completed jobs yet.'}</div>`;
     return;
   }
-  wrap.innerHTML = filtered.map(r=>{
-    if(r.items.length===0){
-      return `<div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
-        <div class="ribbon" style="background:var(--gray)"></div>
-        <div class="body">
-          <div class="id">${escapeHtml(r.name)}</div>
-          <div class="meta"><span class="badge shop">All returned</span></div>
-        </div>
-        <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>`;
-    }
-    // Per-equipment-type breakdown, e.g. "3 Dehumidifiers · 12 Air Movers · 2 Air Scrubbers"
-    const byType = {};
-    r.items.forEach(it=>{ byType[it.type] = (byType[it.type]||0) + 1; });
-    const typeLine = Object.keys(byType).sort().map(t=>`${byType[t]} ${t}${byType[t]!==1?'s':''}`).join(' · ');
-    // Days out = since the earliest item on this job went out
-    const outDates = r.items.map(it=>it.checkedOutDate).filter(Boolean).sort();
-    const maxDays = outDates.length ? daysOut({checkedOutDate: outDates[0]}) : null;
-    const overdueCount = r.items.filter(isOverdue).length;
-    const ribbon = overdueCount>0 ? 'var(--red)' : 'var(--blue)';
-    return `<div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
-      <div class="ribbon" style="background:${ribbon}"></div>
+  wrap.innerHTML = filtered.map(r=>`
+    <div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
+      <div class="ribbon" style="background:${r.items.length>0?'var(--blue)':'var(--gray)'}"></div>
       <div class="body">
-        <div class="id">${escapeHtml(r.name)}${overdueCount>0? ` <span class="badge overdue" style="margin-left:4px;">⚠ ${overdueCount} overdue</span>`:''}</div>
-        <div class="meta">
-          <span class="badge jobsite">${r.items.length} item${r.items.length!==1?'s':''} out</span>
-          ${maxDays!==null? `<span class="badge ${maxDays>7?'overdue':'shop'}">${maxDays} day${maxDays!==1?'s':''} out</span>`:''}
-        </div>
-        <div class="meta" style="margin-top:3px;color:var(--muted);">${escapeHtml(typeLine)}</div>
+        <div class="id">${escapeHtml(r.name)}</div>
+        <div class="meta">${r.items.length>0? `<span class="badge jobsite">${r.items.length} item${r.items.length!==1?'s':''} out</span>` : `<span class="badge shop">All returned</span>`}</div>
       </div>
       <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 function openClientDetail(name){
   currentClientName = name;
@@ -1696,46 +1542,15 @@ function openScanForClientReturn(){
   openScan('clientReturn');
 }
 function addScannedItemToClientReturn(it){
-  if(!currentClientName) return {ok:false, msg:'No job selected'};
+  if(!currentClientName) return;
   const belongs = getClientItems(currentClientName).some(x=>x.id===it.id);
   if(!belongs){
-    return {ok:false, msg:`${it.id} isn't checked out to this client`};
+    showToast(`${it.id} isn't checked out to this client`);
+    return;
   }
   clientReturnSelected.add(it.id);
   renderClientEquipment();
-  return {ok:true, msg:`${it.id} added to return list`, count:clientReturnSelected.size};
-}
-function openScanForJobKit(){
-  openScan('jobKit');
-}
-function addScannedItemToJobKit(it){
-  if(!isHomeStatus(it.status)){
-    return {ok:false, msg:`${it.id} is ${it.status} — not available`};
-  }
-  if(kitSelected.has(it.id)){
-    return {ok:false, msg:`${it.id} already in kit`};
-  }
-  kitSelected.add(it.id);
-  renderKitList(document.querySelector('#modalKit input[placeholder="Filter list..."]')?.value || '');
-  return {ok:true, msg:`${it.id} added`, count:kitSelected.size};
-}
-function openScanForBulkMove(){
-  openScan('bulkMove');
-}
-function addScannedItemToBulkMove(it){
-  const dest = document.getElementById('bulkMoveDest')?.value;
-  if(!isHomeStatus(it.status)){
-    return {ok:false, msg:`${it.id} is ${it.status} — not available`};
-  }
-  if(it.status===dest){
-    return {ok:false, msg:`${it.id} already at ${dest}`};
-  }
-  if(bulkMoveSelected.has(it.id)){
-    return {ok:false, msg:`${it.id} already selected`};
-  }
-  bulkMoveSelected.add(it.id);
-  renderBulkMoveList(document.querySelector('#modalBulkMove input[placeholder="Filter list..."]')?.value || '');
-  return {ok:true, msg:`${it.id} added`, count:bulkMoveSelected.size};
+  showToast(`${it.id} added to return list`);
 }
 function openBulkCheckinForClient(){
   if(clientReturnSelected.size===0){ showToast('Select at least one item first'); return; }
@@ -1746,7 +1561,6 @@ function openBulkCheckinForClient(){
   document.getElementById('inCondition').value = 'Good';
   document.getElementById('inNotes').value = '';
   document.getElementById('inBulkHint').style.display = 'block';
-  populateInLocation();
   toggleMaintWarn();
   openModal('modalIn');
 }
@@ -1850,23 +1664,21 @@ function printClientReport(){
 function saveClientReport(){ guideToSaveAsPDF(printClientReport); }
 
 /* ============ RENDER: INVENTORY ============ */
-function statusFilters(){ return ['all','Shop', ...customLocations, 'Jobsite','overdue','Maintenance','Missing','Retired']; }
+const STATUS_FILTERS = ['all','Shop','Jobsite','overdue','Maintenance','Missing','Retired'];
 let activeStatusFilter = 'all';
 function setStatusFilter(f){ activeStatusFilter=f; renderInventory(); }
 
 function renderInventory(){
   const chipWrap = document.getElementById('statusChips');
-  const filters = statusFilters();
   const labels = {all:'All',Shop:'Shop',Jobsite:'On job',overdue:'Overdue',Maintenance:'Maintenance',Missing:'Missing',Retired:'Retired'};
-  const labelFor = f => labels[f] || f; // custom locations use their own name as the label
-  chipWrap.innerHTML = filters.map(f=>`<div class="chip ${f===activeStatusFilter?'active':''}" onclick="setStatusFilter('${f.replace(/'/g,"\\'")}')">${escapeHtml(labelFor(f))}</div>`).join('');
+  chipWrap.innerHTML = STATUS_FILTERS.map(f=>`<div class="chip ${f===activeStatusFilter?'active':''}" onclick="setStatusFilter('${f}')">${labels[f]}</div>`).join('');
 
   const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
-  let items = visibleInventory().filter(it=>{
+  let items = inventory.filter(it=>{
     if(activeStatusFilter==='overdue'){ if(!isOverdue(it)) return false; }
     else if(activeStatusFilter!=='all' && it.status!==activeStatusFilter) return false;
     if(!q) return true;
-    return [it.id,it.type,it.model,it.jobsite,it.tech,it.serial,it.barcode].join(' ').toLowerCase().includes(q);
+    return [it.id,it.type,it.model,it.jobsite,it.tech,it.serial].join(' ').toLowerCase().includes(q);
   });
 
   const groups = {};
@@ -1892,7 +1704,7 @@ function renderInventory(){
 
 function ribbonColor(it){
   if(isOverdue(it)) return 'var(--red)';
-  if(isHomeStatus(it.status)) return 'var(--green)';
+  if(it.status==='Shop') return 'var(--green)';
   if(it.status==='Jobsite') return 'var(--blue)';
   if(it.status==='Maintenance') return 'var(--amber)';
   if(it.status==='Missing') return 'var(--red)';
@@ -1900,17 +1712,15 @@ function ribbonColor(it){
 }
 function badgeHTML(it){
   if(isOverdue(it)) return `<span class="badge overdue">Overdue</span>`;
-  const map={Jobsite:'jobsite',Maintenance:'maintenance',Missing:'missing',Retired:'retired'};
-  const cls = isHomeStatus(it.status) ? 'shop' : (map[it.status]||'shop');
-  return `<span class="badge ${cls}">${escapeHtml(it.status)}</span>`;
+  const map={Shop:'shop',Jobsite:'jobsite',Maintenance:'maintenance',Missing:'missing',Retired:'retired'};
+  return `<span class="badge ${map[it.status]||'shop'}">${it.status}</span>`;
 }
 function eqCardHTML(it){
   let metaLine = '';
   if(it.status==='Jobsite') metaLine = `${it.jobsite||'Unknown site'} · ${it.tech||'Unassigned'} · back ${fmtDate(it.expectedReturnDate)}`;
   else if(it.status==='Maintenance') metaLine = `In maintenance${it.notes? ' · '+it.notes:''}`;
   else if(it.status==='Missing') metaLine = `Reported missing${it.notes? ' · '+it.notes:''}`;
-  else if(isHomeStatus(it.status)) metaLine = `${it.status==='Shop'?'In shop':'In '+it.status} · ${it.condition||'Good'} condition`;
-  else metaLine = `${it.condition||'Good'} condition`;
+  else metaLine = `In shop · ${it.condition||'Good'} condition`;
   return `<div class="eq-card" onclick="openDetail('${it.id}')">
     <div class="ribbon" style="background:${ribbonColor(it)}"></div>
     <div class="body">
@@ -1921,18 +1731,18 @@ function eqCardHTML(it){
   </div>`;
 }
 function typeIcon(type){
-  if(type==='Dehumidifier') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7.5 6 12a6 6 0 0 1-12 0c0-4.5 6-12 6-12Z"/></svg>`;
-  if(type==='Air Scrubber') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`;
-  if(type==='Air Mover') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2M17.6 7.6A2 2 0 1 1 19 11H2"/></svg>`;
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>`;
+  if(type==='Dehumidifier') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7.5 6 12a6 6 0 0 1-12 0c0-4.5 6-12 6-12Z"/></svg>`;
+  if(type==='Air Scrubber') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`;
+  if(type==='Air Mover') return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2M17.6 7.6A2 2 0 1 1 19 11H2"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>`;
 }
 
 /* ============ RENDER: ACTIVITY ============ */
 function renderActivity(){
   const list = document.getElementById('activityList');
   if(activityLog.length===0){ list.innerHTML = `<div class="empty">No activity yet</div>`; return; }
-  const dotColor = a=>({checkout:'var(--blue)',checkin:'var(--green)',maintenance:'var(--amber)',missing:'var(--red)',added:'var(--cyan)',retired:'var(--gray)',moved:'var(--cyan-dark)'}[a]||'var(--muted)');
-  const verb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',missing:'reported missing',added:'added to inventory',retired:'retired'}[a]||a);
+  const dotColor = a=>({checkout:'var(--blue)',checkin:'var(--green)',maintenance:'var(--amber)',sentmaintenance:'var(--amber)',fixed:'var(--green)',missing:'var(--red)',added:'var(--cyan)',retired:'var(--gray)'}[a]||'var(--muted)');
+  const verb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',sentmaintenance:'sent to maintenance from the shop',fixed:'marked fixed — back in shop',missing:'reported missing',added:'added to inventory',retired:'retired'}[a]||a);
   list.innerHTML = activityLog.slice(0,80).map(a=>{
     const time = new Date(a.ts);
     let txt = `<b>${a.id}</b> ${verb(a.action)}`;
@@ -2037,13 +1847,13 @@ function generateFleetReportHtml(){
     <div class="report-meta">Generated ${fmtDate(todayStr())} &middot; ${escapeHtml(currentReportSelectionLabel())}</div>`;
 
   if(include('fleetoverview')){
-    const shop = visibleInventory().filter(i=>isHomeStatus(i.status)).length;
-    const jobsite = visibleInventory().filter(i=>i.status==='Jobsite').length;
-    const missing = visibleInventory().filter(i=>i.status==='Missing').length;
+    const shop = inventory.filter(i=>i.status==='Shop').length;
+    const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
+    const missing = inventory.filter(i=>i.status==='Missing').length;
     html += `<div class="report-section">
       <div class="report-h">Fleet Overview</div>
       <ul>
-        <li><b>Total fleet:</b> ${visibleInventory().length}</li>
+        <li><b>Total fleet:</b> ${inventory.length}</li>
         <li><b>In shop:</b> ${shop}</li>
         <li><b>On jobsites:</b> ${jobsite}</li>
         <li><b>Missing:</b> ${missing}</li>
@@ -2053,7 +1863,7 @@ function generateFleetReportHtml(){
 
   if(include('bysite')){
     const bySite = {};
-    visibleInventory().filter(i=>i.status==='Jobsite').forEach(it=>{
+    inventory.filter(i=>i.status==='Jobsite').forEach(it=>{
       const site = it.jobsite || 'Unspecified site';
       (bySite[site] = bySite[site] || []).push(it);
     });
@@ -2076,10 +1886,10 @@ function generateFleetReportHtml(){
 
   if(include('bytype')){
     const byType = {};
-    visibleInventory().forEach(it=>{
+    inventory.forEach(it=>{
       const t = byType[it.type] = byType[it.type] || {total:0, shop:0, job:0};
       t.total++;
-      if(isHomeStatus(it.status)) t.shop++;
+      if(it.status==='Shop') t.shop++;
       else if(it.status==='Jobsite') t.job++;
     });
     html += `<div class="report-section"><div class="report-h">By Equipment Type</div><ul>`;
@@ -2091,7 +1901,7 @@ function generateFleetReportHtml(){
   }
 
   if(include('overdue')){
-    const overdueItems = visibleInventory().filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
+    const overdueItems = inventory.filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
     html += `<div class="report-section"><div class="report-h">Overdue</div>`;
     if(overdueItems.length===0){
       html += `<p>Nothing overdue right now.</p>`;
@@ -2113,12 +1923,12 @@ function renderReports(){
   const statWrap = document.getElementById('reportStatRow');
   if(!statWrap) return; // view not in DOM yet on first paint
 
-  const shop = visibleInventory().filter(i=>isHomeStatus(i.status)).length;
-  const jobsite = visibleInventory().filter(i=>i.status==='Jobsite').length;
-  const maint = visibleInventory().filter(i=>i.status==='Maintenance').length;
-  const missing = visibleInventory().filter(i=>i.status==='Missing').length;
+  const shop = inventory.filter(i=>i.status==='Shop').length;
+  const jobsite = inventory.filter(i=>i.status==='Jobsite').length;
+  const maint = inventory.filter(i=>i.status==='Maintenance').length;
+  const missing = inventory.filter(i=>i.status==='Missing').length;
   statWrap.innerHTML = `
-    <div class="stat-card-light"><div class="n">${visibleInventory().length}</div><div class="l">Total fleet</div></div>
+    <div class="stat-card-light"><div class="n">${inventory.length}</div><div class="l">Total fleet</div></div>
     <div class="stat-card-light"><div class="n">${shop}</div><div class="l">In shop</div></div>
     <div class="stat-card-light"><div class="n">${jobsite}</div><div class="l">On jobsites</div></div>
     <div class="stat-card-light ${missing?'alert':''}"><div class="n">${missing}</div><div class="l">Missing</div></div>
@@ -2129,7 +1939,7 @@ function renderReports(){
 
   // --- By job site ---
   const bySite = {};
-  visibleInventory().filter(i=>i.status==='Jobsite').forEach(it=>{
+  inventory.filter(i=>i.status==='Jobsite').forEach(it=>{
     const site = it.jobsite || 'Unspecified site';
     (bySite[site] = bySite[site] || []).push(it);
   });
@@ -2155,10 +1965,10 @@ function renderReports(){
 
   // --- By equipment type ---
   const byType = {};
-  visibleInventory().forEach(it=>{
+  inventory.forEach(it=>{
     const t = byType[it.type] = byType[it.type] || {total:0, shop:0, job:0, maint:0};
     t.total++;
-    if(isHomeStatus(it.status)) t.shop++;
+    if(it.status==='Shop') t.shop++;
     else if(it.status==='Jobsite') t.job++;
     else if(it.status==='Maintenance') t.maint++;
   });
@@ -2181,7 +1991,7 @@ function renderReports(){
 
   // --- Overdue ---
   const overdueWrap = document.getElementById('reportOverdue');
-  const overdueItems = visibleInventory().filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
+  const overdueItems = inventory.filter(isOverdue).sort((a,b)=>(a.expectedReturnDate||'').localeCompare(b.expectedReturnDate||''));
   if(overdueItems.length===0){
     overdueWrap.innerHTML = `<div class="empty">Nothing overdue right now.</div>`;
   } else {
@@ -2196,7 +2006,7 @@ function renderReports(){
 
 function exportCSV(){
   const cols = ['Asset ID','Type','Make/Model','Serial','Status','Job Site','Assigned Tech','Checked Out Date','Expected Return Date','Condition','Last Maintenance Date','Notes'];
-  const rows = visibleInventory().map(it=>[it.id,it.type,it.model,it.serial,it.status,it.jobsite,it.tech,it.checkedOutDate,it.expectedReturnDate,it.condition,it.lastMaintenanceDate,it.notes]);
+  const rows = inventory.map(it=>[it.id,it.type,it.model,it.serial,it.status,it.jobsite,it.tech,it.checkedOutDate,it.expectedReturnDate,it.condition,it.lastMaintenanceDate,it.notes]);
   const esc = v => `"${String(v==null?'':v).replace(/"/g,'""')}"`;
   const csv = [cols.map(esc).join(','), ...rows.map(r=>r.map(esc).join(','))].join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -2236,7 +2046,7 @@ function openDetail(id){
   document.getElementById('dGrid').innerHTML = `
     <div class="detail-box"><div class="l">Status</div><div class="v">${it.status}</div></div>
     <div class="detail-box"><div class="l">Condition</div><div class="v">${it.condition||'—'}</div></div>
-    <div class="detail-box"><div class="l">${it.status==='Jobsite'?'Job site':'Location'}</div><div class="v">${it.status==='Jobsite' ? (it.jobsite||'—') : it.status==='Shop' ? SHOP_ADDRESS : it.status==='Maintenance' ? SHOP_ADDRESS+' (maintenance)' : isHomeStatus(it.status) ? it.status : '—'}</div></div>
+    <div class="detail-box"><div class="l">${it.status==='Jobsite'?'Job site':'Location'}</div><div class="v">${it.status==='Jobsite' ? (it.jobsite||'—') : (it.status==='Shop'||it.status==='Maintenance') ? SHOP_ADDRESS : '—'}</div></div>
     <div class="detail-box"><div class="l">Assigned to</div><div class="v">${it.tech||'—'}</div></div>
     <div class="detail-box"><div class="l">Checked out</div><div class="v">${fmtDate(it.checkedOutDate)}</div></div>
     <div class="detail-box"><div class="l">Expected return</div><div class="v">${fmtDate(it.expectedReturnDate)}</div></div>
@@ -2244,12 +2054,12 @@ function openDetail(id){
     <div class="detail-box"><div class="l">Last maintenance</div><div class="v">${fmtDate(it.lastMaintenanceDate)}</div></div>
   `;
   let actions = '';
-  actions += `<button class="btn btn-ghost" onclick="openEditItem('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Edit</button>`;
-  if(isHomeStatus(it.status) || it.status==='Maintenance'){
+  if(it.status==='Shop'){
     actions += `<button class="btn btn-cyan" onclick="openCheckout('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>Check out</button>`;
+    actions += `<button class="btn btn-amber" onclick="openSendMaintenance('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>Send to maintenance</button>`;
   }
-  if(isHomeStatus(it.status)){
-    actions += `<button class="btn btn-ghost" onclick="openMove('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4-4 4 4M9 5v14M15 15l4 4 4-4M19 19V5"/></svg>Move</button>`;
+  if(it.status==='Maintenance'){
+    actions += `<button class="btn btn-green" onclick="markFixed('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Mark fixed — return to shop</button>`;
   }
   if(it.status==='Jobsite'){
     actions += `<button class="btn btn-green" onclick="openCheckin('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Check in</button>`;
@@ -2261,14 +2071,12 @@ function openDetail(id){
   }
   if(it.status!=='Retired'){
     actions += `<button class="btn btn-ghost" onclick="retireItem('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M8 6V4h8v2"/></svg>Retire</button>`;
-  } else {
-    actions += `<button class="btn btn-ghost" style="color:var(--red);border-color:var(--red);" onclick="deleteItem('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>`;
   }
   document.getElementById('dActions').innerHTML = actions;
 
   const hist = activityLog.filter(a=>a.id===id).slice(0,15);
   document.getElementById('dHistory').innerHTML = hist.length? hist.map(a=>{
-    const verb = ({checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',missing:'Reported missing',added:'Added to inventory',retired:'Retired',moved:'Moved'}[a.action]||a.action);
+    const verb = ({checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',missing:'Reported missing',added:'Added to inventory',retired:'Retired'}[a.action]||a.action);
     const time = new Date(a.ts);
     return `<div class="history-item"><div class="h-txt">${verb}${a.jobsite? ' — '+a.jobsite:''}</div><div class="h-time">${time.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div>`;
   }).join('') : `<div class="hint">No history yet.</div>`;
@@ -2300,8 +2108,11 @@ function prefillOutAddress(){
 async function confirmCheckout(){
   const it = inventory.find(i=>i.id===currentDetailId);
   if(!it) return;
-  if(!isHomeStatus(it.status) && it.status!=='Maintenance'){
-    showToast(`${it.id} is already checked out to ${it.jobsite||'a job'} — return it first`);
+  if(it.status!=='Shop'){
+    const msg = it.status==='Maintenance'
+      ? `${it.id} is in Maintenance — mark it fixed and returned to shop before checking it out`
+      : `${it.id} is already checked out to ${it.jobsite||'a job'} — return it first`;
+    showToast(msg);
     closeModal('modalOut');
     renderAll();
     return;
@@ -2324,12 +2135,6 @@ async function confirmCheckout(){
 }
 
 /* ============ CHECK IN ============ */
-function populateInLocation(){
-  const sel = document.getElementById('inLocation');
-  if(!sel) return;
-  sel.innerHTML = homeLocations().map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
-  sel.value = 'Shop';
-}
 function openCheckin(id){
   currentDetailId = id;
   bulkCheckinIds = null;
@@ -2340,7 +2145,6 @@ function openCheckin(id){
   document.getElementById('inCondition').value = it.condition||'Good';
   document.getElementById('inNotes').value = '';
   document.getElementById('inBulkHint').style.display = 'none';
-  populateInLocation();
   toggleMaintWarn();
   closeModal('modalDetail');
   openModal('modalIn');
@@ -2356,13 +2160,12 @@ async function confirmCheckin(){
   const cond = document.getElementById('inCondition').value;
   const notes = document.getElementById('inNotes').value.trim();
   const checkedInBy = document.getElementById('inTech').value.trim();
-  const returnLocation = document.getElementById('inLocation').value || 'Shop';
   const routeMaint = (cond==='Needs Repair'||cond==='Out of Service');
   let processed = 0;
   ids.forEach(id=>{
     const it = inventory.find(i=>i.id===id);
     if(!it) return;
-    it.status = routeMaint ? 'Maintenance' : returnLocation;
+    it.status = routeMaint ? 'Maintenance' : 'Shop';
     it.condition = cond;
     it.notes = notes;
     it.lastMaintenanceDate = routeMaint ? todayStr() : it.lastMaintenanceDate;
@@ -2384,87 +2187,8 @@ async function confirmCheckin(){
     renderClientTimeline();
   }
   showToast(wasBulk
-    ? `${processed} item${processed!==1?'s':''} checked in to ${returnLocation}`
-    : (routeMaint? `${ids[0]} routed to maintenance` : `${ids[0]} checked in to ${returnLocation}`));
-}
-
-/* ============ MOVE (between Shop / vans / other locations) ============ */
-function openMove(id){
-  currentDetailId = id;
-  const it = inventory.find(i=>i.id===id);
-  if(!it) return;
-  document.getElementById('moveSub').textContent = `${it.id} — currently ${it.status}`;
-  const dest = document.getElementById('moveDest');
-  dest.innerHTML = homeLocations().filter(l=>l!==it.status).map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
-  closeModal('modalDetail');
-  openModal('modalMove');
-}
-async function confirmMove(){
-  const it = inventory.find(i=>i.id===currentDetailId);
-  if(!it) return;
-  const dest = document.getElementById('moveDest').value;
-  if(!dest) return;
-  const from = it.status;
-  it.status = dest;
-  await saveInventory();
-  logActivity('moved', it, `${from} → ${dest}`);
-  closeModal('modalMove');
-  renderAll();
-  showToast(`${it.id} moved to ${dest}`);
-}
-
-/* ============ BULK MOVE (load a van, shuffle several items at once) ============ */
-function openBulkMove(presetDest){
-  bulkMoveSelected = new Set();
-  const dest = document.getElementById('bulkMoveDest');
-  dest.innerHTML = homeLocations().map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
-  if(presetDest) dest.value = presetDest;
-  dest.onchange = () => renderBulkMoveList(document.querySelector('#modalBulkMove input[placeholder="Filter list..."]')?.value || '');
-  renderBulkMoveList('');
-  openModal('modalBulkMove');
-}
-function renderBulkMoveList(filter){
-  filter = (filter||'').toLowerCase();
-  const dest = document.getElementById('bulkMoveDest').value;
-  // Anything at a home location EXCEPT the chosen destination — no point listing
-  // items already sitting where you're sending things.
-  const items = visibleInventory().filter(i=>isHomeStatus(i.status) && i.status!==dest &&
-    [i.id,i.type,i.model,i.serial,i.barcode].join(' ').toLowerCase().includes(filter))
-    .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
-  const list = document.getElementById('bulkMoveList');
-  if(items.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">Nothing available to move${filter?' matching that':''}</div>`; return; }
-  list.innerHTML = items.map(it=>`
-    <label class="kit-row">
-      <input type="checkbox" ${bulkMoveSelected.has(it.id)?'checked':''} onchange="toggleBulkMove('${it.id}',this.checked)">
-      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''} <span style="color:var(--muted);">· currently ${it.status}</span></div></div>
-    </label>`).join('');
-  updateBulkMoveCount();
-}
-function toggleBulkMove(id, checked){
-  if(checked) bulkMoveSelected.add(id); else bulkMoveSelected.delete(id);
-  updateBulkMoveCount();
-}
-function updateBulkMoveCount(){
-  document.getElementById('bulkMoveCount').textContent = `${bulkMoveSelected.size} item${bulkMoveSelected.size!==1?'s':''} selected`;
-}
-async function confirmBulkMove(){
-  if(bulkMoveSelected.size===0){ showToast('Select at least one item first'); return; }
-  const dest = document.getElementById('bulkMoveDest').value;
-  let moved = 0;
-  bulkMoveSelected.forEach(id=>{
-    const it = inventory.find(i=>i.id===id);
-    if(!it || !isHomeStatus(it.status) || it.status===dest) return;
-    const from = it.status;
-    it.status = dest;
-    addActivityEntry('moved', it, `${from} → ${dest}`);
-    moved++;
-  });
-  await saveActivity();
-  await saveInventory();
-  bulkMoveSelected = new Set();
-  closeModal('modalBulkMove');
-  renderAll();
-  showToast(`${moved} item${moved!==1?'s':''} moved to ${dest}`);
+    ? `${processed} item${processed!==1?'s':''} checked back in`
+    : (routeMaint? `${ids[0]} routed to maintenance` : `${ids[0]} checked back in`));
 }
 
 /* ============ MISSING / RETIRE ============ */
@@ -2484,6 +2208,36 @@ async function markFound(id){
   closeModal('modalDetail'); renderAll();
   showToast(`${it.id} back in shop`);
 }
+async function markFixed(id){
+  const it = inventory.find(i=>i.id===id);
+  it.status='Shop';
+  await saveInventory();
+  logActivity('fixed', it, 'Repaired — returned to shop');
+  closeModal('modalDetail'); renderAll();
+  showToast(`${it.id} back in shop, ready to check out`);
+}
+function openSendMaintenance(id){
+  currentDetailId = id;
+  const it = inventory.find(i=>i.id===id);
+  document.getElementById('smSub').textContent = `${it.id} — ${it.model||it.type}`;
+  document.getElementById('smNotes').value = '';
+  closeModal('modalDetail');
+  openModal('modalSendMaintenance');
+}
+async function confirmSendMaintenance(){
+  const it = inventory.find(i=>i.id===currentDetailId);
+  if(!it) return;
+  const notes = document.getElementById('smNotes').value.trim();
+  it.status = 'Maintenance';
+  it.condition = 'Needs Repair';
+  it.notes = notes;
+  it.lastMaintenanceDate = todayStr();
+  await saveInventory();
+  logActivity('sentmaintenance', it, notes || 'Sent to maintenance from shop');
+  closeModal('modalSendMaintenance');
+  renderAll();
+  showToast(`${it.id} sent to maintenance`);
+}
 async function retireItem(id){
   const it = inventory.find(i=>i.id===id);
   if(!confirm(`Retire ${it.id}? It will be hidden from active use but kept in history.`)) return;
@@ -2492,57 +2246,6 @@ async function retireItem(id){
   logActivity('retired', it);
   closeModal('modalDetail'); renderAll();
   showToast(`${it.id} retired`);
-}
-const DELETE_RETENTION_DAYS = 30;
-async function deleteItem(id){
-  const it = inventory.find(i=>i.id===id);
-  if(!it) return;
-  if(!confirm(`Delete ${it.id}? It'll move to Recently Deleted for ${DELETE_RETENTION_DAYS} days in case this was a mistake, then it's gone for good.`)) return;
-  it.deletedAt = new Date().toISOString();
-  await saveInventory();
-  closeModal('modalDetail');
-  renderAll();
-  showToast(`${id} deleted — recoverable for ${DELETE_RETENTION_DAYS} days`);
-}
-async function restoreItem(id){
-  const it = inventory.find(i=>i.id===id);
-  if(!it) return;
-  delete it.deletedAt;
-  await saveInventory();
-  renderRecentlyDeleted();
-  renderAll();
-  showToast(`${it.id} restored`);
-}
-function purgeExpiredDeletes(){
-  const cutoff = Date.now() - DELETE_RETENTION_DAYS*86400000;
-  const before = inventory.length;
-  inventory = inventory.filter(i=>{
-    if(!i.deletedAt) return true;
-    return new Date(i.deletedAt).getTime() > cutoff;
-  });
-  if(inventory.length!==before){
-    activityLog = activityLog.filter(a=>inventory.some(i=>i.id===a.id));
-    saveInventory();
-    saveActivity();
-  }
-}
-function openRecentlyDeleted(){
-  renderRecentlyDeleted();
-  openModal('modalRecentlyDeleted');
-}
-function renderRecentlyDeleted(){
-  const list = document.getElementById('recentlyDeletedList');
-  if(!list) return;
-  const deleted = inventory.filter(i=>i.deletedAt).sort((a,b)=> new Date(b.deletedAt)-new Date(a.deletedAt));
-  document.getElementById('recentlyDeletedCount').textContent = deleted.length;
-  if(deleted.length===0){ list.innerHTML = `<div class="empty">Nothing in here right now.</div>`; return; }
-  list.innerHTML = deleted.map(it=>{
-    const daysLeft = DELETE_RETENTION_DAYS - Math.floor((Date.now()-new Date(it.deletedAt).getTime())/86400000);
-    return `<div class="team-row">
-      <div class="nm"><div class="avatar">${initials(it.type||'EQ')}</div>${it.id} — ${it.type}${it.model? ' · '+it.model:''} <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${Math.max(0,daysLeft)}d left)</span></div>
-      <button class="btn btn-cyan" style="width:auto;padding:6px 14px;font-size:12px;" onclick="restoreItem('${it.id}')">Restore</button>
-    </div>`;
-  }).join('');
 }
 
 /* ============ ADD ITEM ============ */
@@ -2592,46 +2295,6 @@ async function confirmAddItem(){
   showToast(`${id} added — print a label with this code`);
 }
 
-function openEditItem(id){
-  const it = inventory.find(i=>i.id===id);
-  if(!it) return;
-  currentDetailId = id;
-  const types = [...new Set(inventory.map(i=>i.type))];
-  document.getElementById('typeList').innerHTML = types.map(t=>`<option value="${t}">`).join('');
-  document.getElementById('editType').value = it.type || '';
-  document.getElementById('editId').value = it.id;
-  document.getElementById('editModel').value = it.model || '';
-  document.getElementById('editSerial').value = it.serial || '';
-  document.getElementById('editPurchase').value = it.purchaseDate || '';
-  closeModal('modalDetail');
-  openModal('modalEditItem');
-}
-async function confirmEditItem(){
-  const oldId = currentDetailId;
-  const it = inventory.find(i=>i.id===oldId);
-  if(!it) return;
-  const newId = document.getElementById('editId').value.trim().toUpperCase();
-  const type = document.getElementById('editType').value.trim();
-  if(!type || !newId){ showToast('Type and Asset ID are required'); return; }
-  if(newId!==oldId && inventory.some(i=>i.id===newId)){
-    showToast('That Asset ID is already in use by another item');
-    return;
-  }
-  it.type = type;
-  it.model = document.getElementById('editModel').value.trim();
-  it.serial = document.getElementById('editSerial').value.trim();
-  it.purchaseDate = document.getElementById('editPurchase').value;
-  if(newId!==oldId){
-    it.id = newId;
-    activityLog.forEach(a=>{ if(a.id===oldId) a.id = newId; });
-    await saveActivity();
-  }
-  await saveInventory();
-  closeModal('modalEditItem');
-  renderAll();
-  showToast(newId!==oldId ? `Updated — ID changed from ${oldId} to ${newId}` : `${newId} updated`);
-}
-
 /* ============ JOB KIT (bulk checkout) ============ */
 let kitReturnToClient = null;
 async function openJobKit(returnToClient){
@@ -2658,15 +2321,15 @@ function prefillKitAddress(){
 }
 function renderKitList(filter){
   filter = (filter||'').toLowerCase();
-  const shopItems = visibleInventory().filter(i=>isHomeStatus(i.status) &&
-    [i.id,i.type,i.model,i.serial,i.barcode].join(' ').toLowerCase().includes(filter))
+  const shopItems = inventory.filter(i=>i.status==='Shop' &&
+    [i.id,i.type,i.model].join(' ').toLowerCase().includes(filter))
     .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
   const list = document.getElementById('kitList');
-  if(shopItems.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">No available items match</div>`; return; }
+  if(shopItems.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">No shop items match</div>`; return; }
   list.innerHTML = shopItems.map(it=>`
     <label class="kit-row">
       <input type="checkbox" ${kitSelected.has(it.id)?'checked':''} onchange="toggleKit('${it.id}',this.checked)">
-      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''} <span style="color:var(--muted);">· ${it.status}</span></div></div>
+      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''}</div></div>
     </label>`).join('');
   updateKitCount();
 }
@@ -2690,7 +2353,8 @@ async function confirmKit(){
   kitSelected.forEach(id=>{
     const it = inventory.find(i=>i.id===id);
     if(!it) return;
-    if(!isHomeStatus(it.status) && it.status!=='Maintenance'){
+    if(it.status!=='Shop'){
+      unavailable.push(it.id); // in Maintenance, already out, or otherwise not available — skip it, don't overwrite
       return;
     }
     it.status='Jobsite'; it.jobsite=jobsite; it.tech=tech;
@@ -2717,139 +2381,67 @@ async function confirmKit(){
 }
 
 /* ============ SCAN ============ */
-let lastScanCode = null;
-let lastScanTime = 0;
-const SCAN_COOLDOWN_MS = 2000; // ignore the same code again for this long, so a still-visible label doesn't get reprocessed 10x/sec
-
 async function openScan(mode){
   scanMode = mode || 'lookup';
-  lastScanCode = null;
-  lastScanTime = 0;
   openModal('modalScan');
   document.getElementById('manualCode').value='';
-  const lastResultEl = document.getElementById('scanLastResult');
-  if(lastResultEl){ lastResultEl.className = 'scan-last-result'; lastResultEl.innerHTML = ''; }
   const statusTxt = document.getElementById('scanStatusTxt');
-  const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
-  const modeMsg = {
-    clientReturn: 'Scan items one after another — they\'ll add to the return list as you go',
-    jobKit: 'Scan items one after another — they\'ll add to this job kit as you go',
-    bulkMove: 'Scan items one after another — they\'ll add to the move list as you go',
-  }[scanMode] || 'Looking for a code…';
-  if(typeof Html5Qrcode === 'undefined'){
-    statusTxt.textContent = 'Camera scanner failed to load — use the code field below';
+  const video = document.getElementById('scanVideo');
+  const modeMsg = scanMode==='clientReturn' ? 'Scan an item to add it to the return list…' : 'Looking for a code…';
+  if(!('BarcodeDetector' in window)){
+    statusTxt.textContent = 'Camera scan not supported on this browser — use the code field below';
     return;
   }
   try{
-    scannerInstance = new Html5Qrcode('scanReader');
+    scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject = scanStream;
+    await video.play();
     statusTxt.textContent = modeMsg;
-    await scannerInstance.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 230, height: 230 } },
-      (decodedText) => {
-        if(isContinuous){ handleContinuousScan(decodedText); }
-        else { handleScanResult(decodedText); }
-      },
-      () => {} // per-frame "not found yet" callback — expected constantly while aiming, ignore
-    );
+    const detector = new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
+    const scanLoop = async ()=>{
+      if(!document.getElementById('modalScan').classList.contains('active')) return;
+      try{
+        const codes = await detector.detect(video);
+        if(codes && codes.length){
+          handleScanResult(codes[0].rawValue);
+          return;
+        }
+      }catch(e){}
+      scanRAF = requestAnimationFrame(scanLoop);
+    };
+    scanRAF = requestAnimationFrame(scanLoop);
   }catch(e){
-    console.error('scanner start failed', e);
     statusTxt.textContent = 'Camera unavailable — use the code field below';
   }
 }
 function closeScan(){
   closeModal('modalScan');
-  if(scannerInstance){
-    const inst = scannerInstance;
-    scannerInstance = null;
-    inst.stop().then(()=>inst.clear()).catch(()=>{});
-  }
-}
-let scanAudioCtx = null;
-function playBeep(ok){
-  try{
-    scanAudioCtx = scanAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const osc = scanAudioCtx.createOscillator();
-    const gain = scanAudioCtx.createGain();
-    osc.connect(gain); gain.connect(scanAudioCtx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = ok ? 880 : 220;
-    gain.gain.setValueAtTime(0.18, scanAudioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, scanAudioCtx.currentTime + (ok?0.15:0.25));
-    osc.start();
-    osc.stop(scanAudioCtx.currentTime + (ok?0.16:0.26));
-  }catch(e){ /* audio not available — visual + haptic feedback still cover it */ }
-}
-function handleContinuousScan(code){
-  const now = Date.now();
-  const clean = code.trim().toUpperCase();
-  if(clean===lastScanCode && (now-lastScanTime)<SCAN_COOLDOWN_MS) return; // same label still in frame — ignore, camera keeps running
-  lastScanCode = clean;
-  lastScanTime = now;
-  const result = lookupCode(code);
-  flashScanFrame(result.ok);
-  showScanLastResult(result);
-  playBeep(result.ok);
-  if(navigator.vibrate) navigator.vibrate(result.ok ? 80 : [60,60,60]);
-}
-function showScanLastResult(result){
-  const el = document.getElementById('scanLastResult');
-  if(!el) return;
-  el.className = 'scan-last-result show ' + (result.ok ? 'ok' : 'fail');
-  const icon = result.ok
-    ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  el.innerHTML = `${icon}<span>${escapeHtml(result.msg)}${result.count!==undefined?` — ${result.count} total`:''}</span>`;
-}
-function flashScanFrame(ok){
-  const frame = document.querySelector('#modalScan .scan-frame');
-  if(!frame) return;
-  frame.classList.remove('scan-hit','scan-miss');
-  frame.classList.add(ok!==false ? 'scan-hit' : 'scan-miss');
-  setTimeout(()=>frame.classList.remove('scan-hit','scan-miss'), 500);
+  if(scanRAF) cancelAnimationFrame(scanRAF);
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
 }
 function handleScanResult(code){
-  // Only reached for plain single-item lookup mode now — continuous modes
-  // (job kit / move / return) route through handleContinuousScan instead
-  // and never stop the camera between scans.
+  const stayForClientReturn = scanMode==='clientReturn';
   closeScan();
   lookupCode(code);
+  if(stayForClientReturn) setTimeout(()=>openScan('clientReturn'), 400);
 }
 function manualLookup(){
   const code = document.getElementById('manualCode').value.trim();
   if(!code) return;
-  document.getElementById('manualCode').value = '';
-  const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
-  if(isContinuous){
-    const result = lookupCode(code); // camera keeps running — this is just an alternate way to add one item
-    showScanLastResult(result);
-    playBeep(result.ok);
-  } else {
-    closeScan();
-    lookupCode(code);
-  }
+  const stayForClientReturn = scanMode==='clientReturn';
+  closeScan();
+  lookupCode(code);
+  if(stayForClientReturn) setTimeout(()=>openScan('clientReturn'), 400);
 }
 function lookupCode(code){
   const clean = code.trim().toUpperCase();
   const it = inventory.find(i=>i.id.toUpperCase()===clean || (i.barcode||'').toUpperCase()===clean);
-  if(!it){
-    const result = {ok:false, msg:`No match for "${code}"`};
-    showToast(result.msg);
-    return result;
-  }
-  let result;
+  if(!it){ showToast(`No equipment found for "${code}"`); return; }
   if(scanMode==='clientReturn'){
-    result = addScannedItemToClientReturn(it);
-  } else if(scanMode==='jobKit'){
-    result = addScannedItemToJobKit(it);
-  } else if(scanMode==='bulkMove'){
-    result = addScannedItemToBulkMove(it);
+    addScannedItemToClientReturn(it);
   } else {
     openDetail(it.id);
-    result = {ok:true, msg:it.id};
   }
-  if(scanMode!=='lookup') showToast(result.msg + (result.count!==undefined ? ` (${result.count} total)` : ''));
-  return result;
 }
 
 /* ============ TEAM / PERSONNEL ============ */
@@ -2863,6 +2455,9 @@ function openTeam(){
   openModal('modalTeam');
   setTimeout(()=>document.getElementById('teamNameInput').focus(), 150);
 }
+function openHelp(){
+  openModal('modalHelp');
+}
 function renderTeam(){
   const list = document.getElementById('teamList');
   const countEl = document.getElementById('teamCount');
@@ -2874,7 +2469,7 @@ function renderTeam(){
   }
   const sorted = [...personnel].sort((a,b)=>a.localeCompare(b));
   list.innerHTML = sorted.map(name=>{
-    const activeCount = visibleInventory().filter(it=>it.status==='Jobsite' && it.tech===name).length;
+    const activeCount = inventory.filter(it=>it.status==='Jobsite' && it.tech===name).length;
     return `<div class="team-row">
       <div class="nm"><div class="avatar">${initials(name)}</div>${name}${activeCount? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${activeCount} out)</span>`:''}</div>
       <button class="del-btn" onclick="removePersonnel('${name.replace(/'/g,"\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -2899,58 +2494,6 @@ async function removePersonnel(name){
   personnel = personnel.filter(p=>p!==name);
   await savePersonnel();
   renderTeam();
-  showToast(`${name} removed`);
-}
-
-/* ============ LOCATIONS (vans, trailers, shop areas) ============ */
-function openLocations(){
-  document.getElementById('locationNameInput').value = '';
-  renderLocations();
-  openModal('modalLocations');
-  setTimeout(()=>document.getElementById('locationNameInput').focus(), 150);
-}
-function renderLocations(){
-  const list = document.getElementById('locationList');
-  const countEl = document.getElementById('locationCount');
-  if(!list) return; // modal not in DOM yet
-  countEl.textContent = customLocations.length + 1; // +1 for built-in Shop
-  const rows = [];
-  rows.push(`<div class="team-row"><div class="nm"><div class="avatar">SH</div>Shop <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(built in)</span></div><button class="btn btn-ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeModal('modalLocations');openBulkMove('Shop')">Load</button></div>`);
-  const sorted = [...customLocations].sort((a,b)=>a.localeCompare(b));
-  sorted.forEach(name=>{
-    const count = visibleInventory().filter(it=>it.status===name).length;
-    rows.push(`<div class="team-row">
-      <div class="nm"><div class="avatar">${initials(name)}</div>${escapeHtml(name)}${count? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${count} item${count!==1?'s':''})</span>`:''}</div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <button class="btn btn-ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeModal('modalLocations');openBulkMove('${name.replace(/'/g,"\\'")}')">Load</button>
-        <button class="del-btn" onclick="removeLocation('${name.replace(/'/g,"\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
-      </div>
-    </div>`);
-  });
-  list.innerHTML = rows.join('');
-}
-async function confirmAddLocation(){
-  const input = document.getElementById('locationNameInput');
-  const name = input.value.trim();
-  if(!name){ showToast('Enter a location name first'); return; }
-  if(name.toLowerCase()==='shop'){ showToast('Shop already exists'); input.value=''; return; }
-  const exists = customLocations.some(l=>l.toLowerCase()===name.toLowerCase());
-  if(exists){ showToast(`${name} is already a location`); input.value=''; return; }
-  customLocations.push(name);
-  await saveLocations();
-  input.value = '';
-  renderLocations();
-  showToast(`${name} added`);
-}
-async function removeLocation(name){
-  const count = visibleInventory().filter(it=>it.status===name).length;
-  const msg = count
-    ? `${count} item${count!==1?'s':''} currently show ${name} as their location. Remove it from the list anyway? (Those items keep their current status — reassign them from their detail page.)`
-    : `Remove "${name}" from the locations list?`;
-  if(!confirm(msg)) return;
-  customLocations = customLocations.filter(l=>l!==name);
-  await saveLocations();
-  renderLocations();
   showToast(`${name} removed`);
 }
 
