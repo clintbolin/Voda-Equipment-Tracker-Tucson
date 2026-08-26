@@ -984,6 +984,23 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div class="hint" id="ecTechHint">Updates every piece of equipment currently checked out to this job.</div>
   </div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmEditClient()">Save changes</button></div>
+  <div id="ecReopenWrap" style="display:none;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);">
+    <div class="hint" style="background:var(--gray-bg);margin-top:0;margin-bottom:10px;">This job shows as Post Job because nothing's currently checked out to it. If a report shows otherwise — equipment that was never actually logged back in — reopen the job and put the specific items back on it, so you can return them properly or correct the record.</div>
+    <button class="btn btn-ghost" style="width:100%;" onclick="openReopenJob()">Reopen job — put equipment back on it</button>
+  </div>
+</div></div>
+
+<!-- Reopen Job -->
+<div class="overlay" id="modalReopenJob"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Reopen job</div><div class="sheet-sub" id="rjSub">—</div></div>
+    <button class="close-x" onclick="closeModal('modalReopenJob')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="hint" style="margin-top:0;">Select whatever equipment actually belongs to this job. Each item you pick gets marked checked out to it again, so it shows up ready to return — or you can fix its status directly from its own page if it's actually somewhere else.</div>
+  <input id="rjFilterInput" placeholder="Filter by ID, type, or model..." oninput="renderReopenList(this.value)" style="margin:10px 0 8px;">
+  <div class="kit-list" id="rjList"></div>
+  <div class="btn-row"><button class="btn btn-amber" onclick="confirmReopenJob()">Put selected equipment back on this job</button></div>
 </div></div>
 
 <!-- Formal Job Report -->
@@ -1645,6 +1662,7 @@ function openEditClient(){
   document.getElementById('ecTechHint').textContent = items.length
     ? `Updates every piece of equipment currently checked out to this job (${items.length} item${items.length!==1?'s':''}).`
     : `Nothing is currently checked out to this job, so there's no assignment to update — this will just be saved for next time.`;
+  document.getElementById('ecReopenWrap').style.display = items.length===0 ? 'block' : 'none';
   openModal('modalEditClient');
 }
 async function confirmEditClient(){
@@ -1688,6 +1706,51 @@ async function confirmEditClient(){
   renderAll();
   openClientDetail(currentClientName);
   showToast(newName!==oldName ? `Renamed to ${newName}` : 'Job updated');
+}
+
+/* ============ REOPEN JOB (correct discrepancies when equipment was never properly checked in) ============ */
+let reopenSelected = new Set();
+function openReopenJob(){
+  if(!currentClientName) return;
+  reopenSelected = new Set();
+  document.getElementById('rjSub').textContent = currentClientName;
+  document.getElementById('rjFilterInput').value = '';
+  closeModal('modalEditClient');
+  renderReopenList('');
+  openModal('modalReopenJob');
+}
+function renderReopenList(filter){
+  filter = (filter||'').toLowerCase();
+  const items = visibleInventory()
+    .filter(i=>i.status!=='Retired' && [i.id,i.type,i.model].join(' ').toLowerCase().includes(filter))
+    .sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+  const list = document.getElementById('rjList');
+  if(items.length===0){ list.innerHTML = `<div class="empty" style="padding:24px;">No equipment matches</div>`; return; }
+  list.innerHTML = items.map(it=>`
+    <label class="kit-row">
+      <input type="checkbox" ${reopenSelected.has(it.id)?'checked':''} onchange="toggleReopenItem('${it.id}',this.checked)">
+      <div><div class="id">${it.id}</div><div class="model">${it.type} — ${it.model||''} · currently: ${it.status==='Jobsite'?'out at '+(it.jobsite||'another job'):it.status}</div></div>
+    </label>`).join('');
+}
+function toggleReopenItem(id, checked){
+  if(checked) reopenSelected.add(id); else reopenSelected.delete(id);
+}
+async function confirmReopenJob(){
+  if(reopenSelected.size===0){ showToast('Select at least one item first'); return; }
+  const name = currentClientName;
+  reopenSelected.forEach(id=>{
+    const it = inventory.find(i=>i.id===id);
+    if(!it) return;
+    it.status='Jobsite'; it.jobsite=name;
+    it.checkedOutDate = it.checkedOutDate || todayStr();
+    addActivityEntry('checkout', it, 'Reopened job — correcting a discrepancy where this was never logged back in');
+  });
+  await saveActivity();
+  await saveInventory();
+  closeModal('modalReopenJob');
+  renderAll();
+  openClientDetail(name);
+  showToast(`${reopenSelected.size} item${reopenSelected.size!==1?'s':''} put back on ${name}`);
 }
 
 /* ============ FORMAL JOB REPORT (letterhead document, per client) ============ */
