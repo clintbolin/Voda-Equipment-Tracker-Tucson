@@ -969,6 +969,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <button class="close-x" onclick="closeModal('modalEditClient')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="field">
+    <label>Customer name</label>
+    <input id="ecName" placeholder="e.g. Sarah Delgado">
+    <div class="hint">Fixing a typo? This renames the job everywhere — every piece of equipment currently checked out to it, its full history, and its saved address all move to the new name.</div>
+  </div>
+  <div class="field">
     <label>Address</label>
     <input id="ecAddress" placeholder="e.g. 4105 E Miracle Point Rd, Tucson, AZ">
   </div>
@@ -1631,6 +1636,7 @@ async function editClientAddress(){
 function openEditClient(){
   if(!currentClientName) return;
   document.getElementById('ecClientName').textContent = currentClientName;
+  document.getElementById('ecName').value = currentClientName;
   document.getElementById('ecAddress').value = clientAddresses[currentClientName] || '';
   const items = getClientItems(currentClientName);
   const techs = new Set(items.map(it=>it.tech).filter(Boolean));
@@ -1643,8 +1649,31 @@ function openEditClient(){
 }
 async function confirmEditClient(){
   if(!currentClientName) return;
+  const oldName = currentClientName;
+  const newName = document.getElementById('ecName').value.trim();
   const address = document.getElementById('ecAddress').value.trim();
   const tech = document.getElementById('ecTech').value.trim();
+
+  if(!newName){ showToast("Customer name can't be blank"); return; }
+
+  if(newName !== oldName){
+    const collision = getClientNames().find(n => n.toLowerCase()===newName.toLowerCase() && n!==oldName);
+    if(collision){
+      if(!confirm(`"${collision}" already exists as a separate job. Renaming "${oldName}" to this will merge their equipment and history together — this can't be undone. Continue?`)) return;
+    }
+    // Rename this customer everywhere it's referenced, not just on this page
+    inventory.forEach(it=>{ if(it.jobsite===oldName) it.jobsite = newName; });
+    activityLog.forEach(a=>{ if(a.jobsite===oldName) a.jobsite = newName; });
+    if(clientAddresses[oldName]!==undefined){
+      if(!clientAddresses[newName]) clientAddresses[newName] = clientAddresses[oldName];
+      delete clientAddresses[oldName];
+    }
+    await saveInventory();
+    await saveActivity();
+    await saveClientAddresses();
+    currentClientName = newName;
+  }
+
   if(address !== (clientAddresses[currentClientName]||'')){
     clientAddresses[currentClientName] = address;
     await saveClientAddresses();
@@ -1656,10 +1685,9 @@ async function confirmEditClient(){
     techsKnown.add(tech);
   }
   closeModal('modalEditClient');
-  renderClientAddressLine();
-  renderClientEquipment();
   renderAll();
-  showToast('Job updated');
+  openClientDetail(currentClientName);
+  showToast(newName!==oldName ? `Renamed to ${newName}` : 'Job updated');
 }
 
 /* ============ FORMAL JOB REPORT (letterhead document, per client) ============ */
