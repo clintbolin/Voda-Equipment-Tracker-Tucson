@@ -1567,8 +1567,11 @@ function renderClientsList(){
   const wrap = document.getElementById('clientsListBody');
   if(!wrap) return;
   const q = (document.getElementById('clientSearchInput')?.value||'').trim().toLowerCase();
-  const rows = getClientNames().map(name=>({ name, items: getClientItems(name) }))
-    .filter(r=> jobsCategory==='active' ? r.items.length>0 : r.items.length===0);
+  const rows = getClientNames().map(name=>{
+    const items = getClientItems(name);
+    const hasHistory = activityLog.some(a=>a.jobsite===name);
+    return { name, items, isNew: items.length===0 && !hasHistory };
+  }).filter(r=> jobsCategory==='active' ? (r.items.length>0 || r.isNew) : (r.items.length===0 && !r.isNew));
   let filtered = q ? rows.filter(r=>r.name.toLowerCase().includes(q)) : rows;
   filtered.sort((a,b)=> a.name.localeCompare(b.name));
   if(filtered.length===0){
@@ -1576,6 +1579,16 @@ function renderClientsList(){
     return;
   }
   wrap.innerHTML = filtered.map(r=>{
+    if(r.isNew){
+      return `<div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
+        <div class="ribbon" style="background:var(--cyan)"></div>
+        <div class="body">
+          <div class="id">${escapeHtml(r.name)}</div>
+          <div class="meta"><span class="badge jobsite">New job \u2014 ready for equipment</span></div>
+        </div>
+        <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>`;
+    }
     if(r.items.length===0){
       return `<div class="eq-card" onclick="openClientDetail('${escapeHtml(r.name).replace(/'/g,"\\'")}')">
         <div class="ribbon" style="background:var(--gray)"></div>
@@ -1609,13 +1622,19 @@ function renderClientsList(){
     </div>`;
   }).join('');
 }
+function clientStatusText(name){
+  const items = getClientItems(name);
+  if(items.length>0) return `${items.length} item${items.length!==1?'s':''} currently out`;
+  const hasHistory = activityLog.some(a=>a.jobsite===name);
+  return hasHistory ? 'All equipment returned' : 'No equipment checked out yet — ready to load';
+}
 function openClientDetail(name){
   currentClientName = name;
   clientReturnSelected = new Set();
   document.getElementById('cdClientName').textContent = name;
   renderClientAddressLine();
   const items = getClientItems(name);
-  document.getElementById('cdClientSub').textContent = items.length>0 ? `${items.length} item${items.length!==1?'s':''} currently out` : 'All equipment returned';
+  document.getElementById('cdClientSub').textContent = clientStatusText(name);
   renderClientEquipment();
   renderClientTimeline();
   const warnEl = document.getElementById('cdBackendWarning');
@@ -1798,7 +1817,7 @@ function generateClientReportHtml(name){
       <ul>
         <li><b>Customer:</b> ${escapeHtml(name)}</li>
         <li><b>Address:</b> ${address? escapeHtml(address) : '—'}</li>
-        <li><b>Status:</b> ${items.length>0? `${items.length} item${items.length!==1?'s':''} currently checked out` : 'All equipment returned'}</li>
+        <li><b>Status:</b> ${clientStatusText(name)}</li>
       </ul>
     </div>`;
 
@@ -1861,7 +1880,7 @@ function renderClientEquipment(){
   const bar = document.getElementById('cdReturnBar');
   if(!wrap || !currentClientName) return;
   const items = getClientItems(currentClientName);
-  document.getElementById('cdClientSub').textContent = items.length>0 ? `${items.length} item${items.length!==1?'s':''} currently out` : 'All equipment returned';
+  document.getElementById('cdClientSub').textContent = clientStatusText(currentClientName);
   if(items.length===0){
     wrap.innerHTML = `<div class="empty">Nothing checked out to this client right now.</div>`;
     bar.style.display = 'none';
