@@ -191,6 +191,32 @@ header.top::after{
 
 /* equipment card */
 .eq-group{margin-bottom:6px;}
+.snap-card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.snap-head{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--line);}
+.snap-head .ic{width:26px;height:26px;border-radius:7px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.snap-head .ic svg{width:14px;height:14px;}
+.snap-head .nm{font-weight:700;font-size:14px;}
+.snap-head .sub{font-size:11.5px;color:var(--muted);margin-top:1px;}
+.snap-head .val{margin-left:auto;font-weight:700;font-size:12.5px;color:var(--navy-icon);white-space:nowrap;}
+.snap-line{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;}
+.snap-line:last-child{border-bottom:none;}
+.snap-line:active{background:var(--gray-bg);}
+.snap-loc{flex:0 0 96px;font-weight:700;font-size:12.5px;color:var(--navy-icon);word-break:break-word;}
+.snap-loc small{display:block;font-weight:500;color:var(--muted);font-size:11px;}
+.snap-ids{flex:1;font-size:12.5px;line-height:1.5;word-break:break-word;}
+.snap-val{font-size:11.5px;color:var(--muted);white-space:nowrap;}
+.drill-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--gray-bg);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12.5px;font-weight:600;}
+.drill-bar a{color:var(--cyan-dark);font-weight:700;text-decoration:none;}
+[data-theme="dark"] .snap-head .ic svg{ stroke:var(--cyan) !important; }
+[data-theme="dark"] .snap-loc, [data-theme="dark"] .snap-head .val{ color:var(--cyan); }
+.val-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.val-table th{text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1.5px solid var(--line);}
+.val-table td{padding:5px 6px;border-bottom:1px solid var(--line);}
+.val-table .r{text-align:right;white-space:nowrap;}
+.val-table tr.tot td{font-weight:700;border-top:1.5px solid var(--navy-icon);border-bottom:none;}
+.fleet-report-doc .val-table th{color:#555;border-bottom:1.5px solid #cfd5dc;}
+.fleet-report-doc .val-table td{border-bottom:1px solid #E2E6EB;color:#1a1a1a;}
+.fleet-report-doc .val-table tr.tot td{border-top:1.5px solid #0A1F3D;}
 .eq-group-head{display:flex;align-items:center;gap:8px;padding:10px 4px 6px;cursor:pointer;user-select:none;}
 .eq-group-head .ic{width:26px;height:26px;border-radius:7px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .eq-group-head .ic svg{width:14px;height:14px;stroke:var(--navy-icon);}
@@ -591,6 +617,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       <input id="searchInput" placeholder="Search asset ID, model, job site, tech..." oninput="renderInventory()">
     </div>
+    <div class="chip-row" id="invViewBar"></div>
     <div class="chip-row" id="statusChips"></div>
     <div id="inventoryList"></div>
   </div>
@@ -949,6 +976,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     </div>
   </div>
   <div id="cdEquipmentList"></div>
+  <div id="cdValueSummary" style="margin-top:14px;"></div>
 
   <div class="section-title">Report</div>
   <div class="hint" style="margin-bottom:8px;">Pulled live from the activity log — always here, no separate saving required.</div>
@@ -1069,6 +1097,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <label>Purchase date (optional)</label>
     <input type="date" id="addPurchase">
   </div>
+  <div class="field">
+    <label>Value / purchase price (optional)</label>
+    <input type="text" inputmode="decimal" id="addValue" placeholder="e.g. 1250.00">
+    <div class="hint">What you originally paid. Used for the equipment value totals on job reports.</div>
+  </div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmAddItem()">Add to inventory</button></div>
 </div></div>
 
@@ -1099,6 +1132,10 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div class="field">
     <label>Purchase date</label>
     <input type="date" id="editPurchase">
+  </div>
+  <div class="field">
+    <label>Value / purchase price</label>
+    <input type="text" inputmode="decimal" id="editValue" placeholder="e.g. 1250.00">
   </div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmEditItem()">Save changes</button></div>
 </div></div>
@@ -1640,6 +1677,7 @@ function openClientDetail(name){
   document.getElementById('cdClientSub').textContent = clientStatusText(name);
   renderClientEquipment();
   renderClientTimeline();
+  renderClientValueSummary();
   const warnEl = document.getElementById('cdBackendWarning');
   if(!backendSupportsClientInfo){
     warnEl.style.display = 'block';
@@ -1856,6 +1894,13 @@ function generateClientReportHtml(name){
     html += `</ul>`;
   }
   html += `</div>`;
+
+  const vsum = jobValueSummary(name);
+  if(vsum.qty>0 && vsum.total>0){
+    html += `<div class="report-section"><div class="report-h">Equipment Value Summary</div>
+      <p style="margin-bottom:8px;">Every piece of equipment used on this job, grouped by type, with its original purchase cost. Restoration equipment is a significant investment to buy, maintain, and run &mdash; this is the equipment that was placed at your property.</p>
+      ${valueTableHTML(vsum)}</div>`;
+  }
 
   html += `<div class="report-footer">Generated by Voda Equipment Tracker &middot; ${fmtDate(todayStr())}</div>`;
   return html;
@@ -2087,6 +2132,10 @@ function renderInventory(){
   const labelFor = f => labels[f] || f; // custom locations use their own name as the label
   chipWrap.innerHTML = filters.map(f=>`<div class="chip ${f===activeStatusFilter?'active':''}" onclick="setStatusFilter('${f.replace(/'/g,"\\'")}')">${escapeHtml(labelFor(f))}</div>`).join('');
 
+  document.getElementById('invViewBar').innerHTML =
+    `<div class="chip ${invView==='snapshot'?'active':''}" onclick="setInvView('snapshot')">Snapshot</div>
+     <div class="chip ${invView==='detail'?'active':''}" onclick="setInvView('detail')">Detailed list</div>
+     <div class="chip ${showValues?'active':''}" onclick="toggleShowValues()">$ Show values</div>`;
   const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
   let items = visibleInventory().filter(it=>{
     if(activeStatusFilter==='overdue'){ if(!isOverdue(it)) return false; }
@@ -2095,25 +2144,160 @@ function renderInventory(){
     return [it.id,it.type,it.model,it.jobsite,it.tech,it.serial,it.barcode].join(' ').toLowerCase().includes(q);
   });
 
-  const groups = {};
-  items.forEach(it=>{ (groups[it.type]=groups[it.type]||[]).push(it); });
   const list = document.getElementById('inventoryList');
+  if(drill) items = items.filter(it=> it.type===drill.type && locOf(it)===drill.loc);
   if(items.length===0){
     list.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><div>No equipment matches</div></div>`;
     return;
   }
-  list.innerHTML = Object.keys(groups).sort().map(type=>{
+  // Snapshot is the default; searching or tapping a line switches to the full list
+  if(invView==='snapshot' && !drill && !q){
+    list.innerHTML = renderSnapshot(items);
+    return;
+  }
+  const groups = {};
+  items.forEach(it=>{ (groups[it.type]=groups[it.type]||[]).push(it); });
+  const drillBar = drill ? `<div class="drill-bar"><span>${escapeHtml(drill.type)} · ${escapeHtml(drill.loc)} (${items.length})</span><a href="#" onclick="clearDrill();return false;">← Back to snapshot</a></div>` : '';
+  list.innerHTML = drillBar + Object.keys(groups).sort().map(type=>{
     const arr = groups[type].sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
     return `<div class="eq-group">
       <div class="eq-group-head" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed')">
         <div class="ic">${typeIcon(type)}</div>
         <div class="nm">${type}</div>
-        <div class="ct">${arr.length}</div>
+        <div class="ct">${arr.length}${showValues && arr.some(valueOf) ? ' · '+fmtMoney(arr.reduce((t,i)=>t+valueOf(i),0)) : ''}</div>
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="eq-group-body">${arr.map(eqCardHTML).join('')}</div>
     </div>`;
   }).join('');
+}
+
+/* ============ VALUES + SNAPSHOT HELPERS ============ */
+function parseMoney(v){
+  if(v===null || v===undefined || v==='') return '';
+  const n = parseFloat(String(v).replace(/[$,\s]/g,''));
+  return isNaN(n) ? '' : Math.round(n*100)/100;
+}
+function valueOf(it){ const n = parseMoney(it && it.value); return n===''?0:n; }
+function fmtMoney(n){ return (Number(n)||0).toLocaleString('en-US',{style:'currency',currency:'USD'}); }
+
+let invView = 'snapshot';   // 'snapshot' | 'detail'
+let showValues = false;
+let drill = null;           // {type, loc} when a snapshot line was tapped
+try{
+  invView = localStorage.getItem('voda-eq-invview') || 'snapshot';
+  showValues = localStorage.getItem('voda-eq-showvalues')==='1';
+}catch(e){ /* storage unavailable */ }
+function setInvView(v){ invView=v; drill=null; try{localStorage.setItem('voda-eq-invview',v);}catch(e){} renderInventory(); }
+function toggleShowValues(){
+  showValues=!showValues;
+  try{localStorage.setItem('voda-eq-showvalues',showValues?'1':'0');}catch(e){}
+  renderInventory();
+  if(currentClientName && document.getElementById('modalClientDetail').classList.contains('active')) renderClientValueSummary();
+}
+function locOf(it){ return it.status==='Jobsite' ? (it.jobsite||'Unknown site') : it.status; }
+
+// "A-0001","A-0002","A-0003","A-0007" -> "A-0001–A-0003, A-0007"
+function compressIds(ids){
+  const parsed=[], loose=[];
+  [...new Set(ids)].forEach(id=>{
+    const m = String(id).match(/^(.*?)(\d+)$/);
+    if(m) parsed.push({id, prefix:m[1], num:parseInt(m[2],10), width:m[2].length});
+    else loose.push(id);
+  });
+  parsed.sort((a,b)=> a.prefix.localeCompare(b.prefix) || a.num-b.num);
+  const out=[]; let i=0;
+  const lab=(x)=> x.prefix + String(x.num).padStart(x.width,'0');
+  while(i<parsed.length){
+    let j=i;
+    while(j+1<parsed.length && parsed[j+1].prefix===parsed[i].prefix && parsed[j+1].num===parsed[j].num+1) j++;
+    out.push(j>i ? `${lab(parsed[i])}–${lab(parsed[j])}` : lab(parsed[i]));
+    i=j+1;
+  }
+  loose.sort().forEach(x=>out.push(x));
+  return out.join(', ');
+}
+function drillTo(type, loc){ drill={type,loc}; renderInventory(); window.scrollTo({top:0}); }
+function clearDrill(){ drill=null; renderInventory(); }
+
+function renderSnapshot(items){
+  const byType={};
+  items.forEach(it=>{ (byType[it.type]=byType[it.type]||[]).push(it); });
+  const homeOrder = ['Shop', ...customLocations];
+  const rank = loc => {
+    const h = homeOrder.indexOf(loc); if(h>=0) return h;
+    const fixed = ['Maintenance','Missing','Retired'].indexOf(loc);
+    return fixed>=0 ? 100+fixed : 1000;
+  };
+  return Object.keys(byType).sort().map(type=>{
+    const arr = byType[type];
+    const home = arr.filter(i=>isHomeStatus(i.status)).length;
+    const out = arr.filter(i=>i.status==='Jobsite').length;
+    const maint = arr.filter(i=>i.status==='Maintenance').length;
+    const miss = arr.filter(i=>i.status==='Missing').length;
+    const ret = arr.filter(i=>i.status==='Retired').length;
+    const parts=[`${arr.length} total`];
+    if(home) parts.push(`${home} in shop`);
+    if(out) parts.push(`${out} out`);
+    if(maint) parts.push(`${maint} maintenance`);
+    if(miss) parts.push(`${miss} missing`);
+    if(ret) parts.push(`${ret} retired`);
+    const byLoc={};
+    arr.forEach(it=>{ (byLoc[locOf(it)]=byLoc[locOf(it)]||[]).push(it); });
+    const locs = Object.keys(byLoc).sort((a,b)=> rank(a)-rank(b) || a.localeCompare(b));
+    const typeTotal = arr.reduce((t,i)=>t+valueOf(i),0);
+    const lines = locs.map(loc=>{
+      const li = byLoc[loc];
+      const isJob = rank(loc)===1000;
+      const lv = li.reduce((t,i)=>t+valueOf(i),0);
+      return `<div class="snap-line" onclick="drillTo(${escapeHtml(JSON.stringify(type))},${escapeHtml(JSON.stringify(loc))})">
+        <div class="snap-loc">${escapeHtml(loc)}<small>${isJob?'on job · ':''}${li.length} unit${li.length!==1?'s':''}</small></div>
+        <div class="snap-ids">${escapeHtml(compressIds(li.map(i=>i.id)))}</div>
+        ${showValues ? `<div class="snap-val">${lv? fmtMoney(lv) : '—'}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="snap-card">
+      <div class="snap-head">
+        <div class="ic">${typeIcon(type)}</div>
+        <div><div class="nm">${escapeHtml(type)}</div><div class="sub">${parts.join(' · ')}</div></div>
+        ${showValues ? `<div class="val">${typeTotal? fmtMoney(typeTotal) : '—'}</div>` : ''}
+      </div>
+      ${lines}
+    </div>`;
+  }).join('');
+}
+
+// Everything ever sent out on a job, grouped by equipment type
+function jobValueSummary(name){
+  const ids = new Map();
+  activityLog.forEach(a=>{ if(a.action==='checkout' && a.jobsite===name && !ids.has(a.id)) ids.set(a.id, a.type); });
+  const byType={}; let missing=0;
+  ids.forEach((aType,id)=>{
+    const it = inventory.find(x=>x.id===id);
+    const type = (it && it.type) || aType || 'Other';
+    const v = it ? valueOf(it) : 0;
+    const r = byType[type] = byType[type] || {type, qty:0, total:0, missing:0};
+    r.qty++; r.total+=v;
+    if(!v){ r.missing++; missing++; }
+  });
+  const rows = Object.values(byType).sort((a,b)=>a.type.localeCompare(b.type));
+  return {rows, qty:ids.size, total:rows.reduce((t,r)=>t+r.total,0), missing};
+}
+function valueTableHTML(sum){
+  return `<table class="val-table">
+    <tr><th>Equipment type</th><th class="r">Qty</th><th class="r">Value</th></tr>
+    ${sum.rows.map(r=>`<tr><td>${escapeHtml(r.type)}${r.missing?` <span style="color:#b26a00;">*</span>`:''}</td><td class="r">${r.qty}</td><td class="r">${r.total? fmtMoney(r.total):'—'}</td></tr>`).join('')}
+    <tr class="tot"><td>Total</td><td class="r">${sum.qty}</td><td class="r">${fmtMoney(sum.total)}</td></tr>
+  </table>
+  ${sum.missing? `<div style="font-size:11px;color:#b26a00;margin-top:4px;">* ${sum.missing} item${sum.missing!==1?'s have':' has'} no value entered and ${sum.missing!==1?'are':'is'} not counted in the totals.</div>`:''}`;
+}
+function renderClientValueSummary(){
+  const el = document.getElementById('cdValueSummary');
+  if(!el) return;
+  if(!showValues || !currentClientName){ el.innerHTML=''; return; }
+  const sum = jobValueSummary(currentClientName);
+  if(sum.qty===0){ el.innerHTML=''; return; }
+  el.innerHTML = `<div class="section-title">Equipment value (everything sent to this job)</div>${valueTableHTML(sum)}`;
 }
 
 function ribbonColor(it){
@@ -2140,7 +2324,7 @@ function eqCardHTML(it){
   return `<div class="eq-card" onclick="openDetail('${it.id}')">
     <div class="ribbon" style="background:${ribbonColor(it)}"></div>
     <div class="body">
-      <div class="id">${it.id} <span style="font-weight:500;color:var(--muted);">— ${it.model||''}</span></div>
+      <div class="id">${it.id} <span style="font-weight:500;color:var(--muted);">— ${it.model||''}</span>${showValues? ` <span style="font-weight:600;color:var(--muted);font-size:11.5px;">· ${valueOf(it)? fmtMoney(valueOf(it)) : 'no value'}</span>`:''}</div>
       <div class="meta">${badgeHTML(it)}<span>${metaLine}</span></div>
     </div>
     <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -2421,8 +2605,8 @@ function renderReports(){
 }
 
 function exportCSV(){
-  const cols = ['Asset ID','Type','Make/Model','Serial','Status','Job Site','Assigned Tech','Checked Out Date','Expected Return Date','Condition','Last Maintenance Date','Notes'];
-  const rows = visibleInventory().map(it=>[it.id,it.type,it.model,it.serial,it.status,it.jobsite,it.tech,it.checkedOutDate,it.expectedReturnDate,it.condition,it.lastMaintenanceDate,it.notes]);
+  const cols = ['Asset ID','Type','Make/Model','Serial','Status','Job Site','Assigned Tech','Checked Out Date','Expected Return Date','Condition','Last Maintenance Date','Notes','Value'];
+  const rows = visibleInventory().map(it=>[it.id,it.type,it.model,it.serial,it.status,it.jobsite,it.tech,it.checkedOutDate,it.expectedReturnDate,it.condition,it.lastMaintenanceDate,it.notes,valueOf(it)||'']);
   const esc = v => `"${String(v==null?'':v).replace(/"/g,'""')}"`;
   const csv = [cols.map(esc).join(','), ...rows.map(r=>r.map(esc).join(','))].join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -2467,6 +2651,7 @@ function openDetail(id){
     <div class="detail-box"><div class="l">Checked out</div><div class="v">${fmtDate(it.checkedOutDate)}</div></div>
     <div class="detail-box"><div class="l">Expected return</div><div class="v">${fmtDate(it.expectedReturnDate)}</div></div>
     <div class="detail-box"><div class="l">Serial #</div><div class="v">${it.serial||'—'}</div></div>
+    ${showValues ? `<div class="detail-box"><div class="l">Value (purchase price)</div><div class="v">${valueOf(it)? fmtMoney(valueOf(it)) : '—'}</div></div>` : ''}
     <div class="detail-box"><div class="l">Last maintenance</div><div class="v">${fmtDate(it.lastMaintenanceDate)}</div></div>
   `;
   let actions = '';
@@ -2815,6 +3000,7 @@ function openAddItem(){
   document.getElementById('addModel').value='';
   document.getElementById('addSerial').value='';
   document.getElementById('addPurchase').value='';
+  document.getElementById('addValue').value='';
   const types = [...new Set(inventory.map(i=>i.type))];
   document.getElementById('typeList').innerHTML = types.map(t=>`<option value="${t}">`).join('');
   openModal('modalAdd');
@@ -2843,7 +3029,7 @@ async function confirmAddItem(){
   if(inventory.find(i=>i.id===id)){ showToast('That Asset ID already exists'); return; }
   const item = {
     id, type, model, serial:document.getElementById('addSerial').value.trim(),
-    purchaseDate:document.getElementById('addPurchase').value, status:'Shop',
+    purchaseDate:document.getElementById('addPurchase').value, value:parseMoney(document.getElementById('addValue').value), status:'Shop',
     jobsite:'', tech:'', checkedOutDate:'', expectedReturnDate:'', condition:'New',
     lastMaintenanceDate:'', notes:''
   };
@@ -2866,6 +3052,7 @@ function openEditItem(id){
   document.getElementById('editModel').value = it.model || '';
   document.getElementById('editSerial').value = it.serial || '';
   document.getElementById('editPurchase').value = it.purchaseDate || '';
+  document.getElementById('editValue').value = valueOf(it) || '';
   closeModal('modalDetail');
   openModal('modalEditItem');
 }
@@ -2884,6 +3071,7 @@ async function confirmEditItem(){
   it.model = document.getElementById('editModel').value.trim();
   it.serial = document.getElementById('editSerial').value.trim();
   it.purchaseDate = document.getElementById('editPurchase').value;
+  it.value = parseMoney(document.getElementById('editValue').value);
   if(newId!==oldId){
     it.id = newId;
     activityLog.forEach(a=>{ if(a.id===oldId) a.id = newId; });
