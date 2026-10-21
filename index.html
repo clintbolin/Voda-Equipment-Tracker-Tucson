@@ -209,6 +209,18 @@ header.top::after{
 .drill-bar a{color:var(--cyan-dark);font-weight:700;text-decoration:none;}
 [data-theme="dark"] .snap-head .ic svg{ stroke:var(--cyan) !important; }
 [data-theme="dark"] .snap-loc, [data-theme="dark"] .snap-head .val{ color:var(--cyan); }
+.no-print{}
+@media print{ .no-print{display:none !important;} }
+.fleet-report-doc .rpt-info{display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;font-size:12px;margin-bottom:12px;color:#1a1a1a;}
+.fleet-report-doc .rpt-cols{columns:2;column-gap:22px;font-size:11px;line-height:1.55;color:#1a1a1a;}
+.fleet-report-doc .rpt-cols div{break-inside:avoid;}
+.fleet-report-doc .val-table{font-size:12px;}
+.fleet-report-doc .val-table td.ids{font-size:11px;color:#444;}
+.fleet-report-doc .val-table tr.grp td{background:#F1F4F7;font-weight:700;color:#0A1F3D;}
+.adj-row{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line);}
+.adj-row input{margin-top:3px;width:18px;height:18px;flex-shrink:0;}
+.adj-row .sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.adj-row .flag{color:var(--amber);font-weight:700;}
 .val-table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .val-table th{text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1.5px solid var(--line);}
 .val-table td{padding:5px 6px;border-bottom:1px solid var(--line);}
@@ -624,7 +636,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
 
   <!-- ACTIVITY -->
   <div class="view" id="view-activity">
-    <div class="section-title">Recent activity</div>
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-top:0;"><span>Recent activity</span><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openPrintView('activity')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button></div>
     <div id="activityList"></div>
   </div>
 
@@ -634,6 +646,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <button class="active" onclick="setJobsCategory('active', this)">Active Jobs</button>
       <button onclick="setJobsCategory('post', this)">Post Job</button>
     </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openPrintView('jobs')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print this list</button></div>
     <input id="clientSearchInput" placeholder="Search clients…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;margin-bottom:12px;" oninput="renderClientsList()">
     <div id="clientsListBody"></div>
   </div>
@@ -977,6 +990,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   </div>
   <div id="cdEquipmentList"></div>
   <div id="cdValueSummary" style="margin-top:14px;"></div>
+  <div id="cdAdjustBar" class="no-print" style="margin-top:10px;"></div>
 
   <div class="section-title">Report</div>
   <div class="hint" style="margin-bottom:8px;">Pulled live from the activity log — always here, no separate saving required.</div>
@@ -1045,7 +1059,38 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <button class="close-x" onclick="closeClientFormalReport()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
   </div>
+  <div class="chip-row no-print" id="cfrOptions" style="margin-bottom:8px;"></div>
   <div id="clientFormalReportBody" class="fleet-report-doc"></div>
+</div></div>
+
+<!-- Adjust what went to a job -->
+<div class="overlay" id="modalAdjustJob"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">What actually went to this job?</div><div class="sheet-sub" id="ajSub">—</div></div>
+    <button class="close-x" onclick="closeAdjustJob()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="hint" style="margin-bottom:8px;">Checked = it was on site and counts in the report and value totals. Uncheck anything that was loaded but came back without being used. Nothing is deleted from the history — you can check it again any time.</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+    <button class="export-btn" onclick="adjustUncheckSameDay()">Uncheck same-day returns</button>
+    <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="adjustCheckAll()">Check all</button>
+  </div>
+  <div id="ajList"></div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="saveAdjustJob()">Save</button></div>
+</div></div>
+
+<!-- Print view (snapshot reports from Inventory / Jobs / Activity) -->
+<div class="overlay" id="modalPrintView"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title" id="pvTitle">Print</div><div class="sheet-sub">Snapshot as of right now</div></div>
+    <div style="display:flex;align-items:center;gap:13px;">
+      <button class="export-btn" onclick="printPrintView()">Print</button>
+      <button class="export-btn" style="background:var(--blue-bg);color:var(--blue);" onclick="savePrintView()">Save PDF</button>
+      <button class="close-x" onclick="closeModal('modalPrintView')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  </div>
+  <div id="printViewBody" class="fleet-report-doc"></div>
 </div></div>
 
 <!-- Scan -->
@@ -1678,6 +1723,7 @@ function openClientDetail(name){
   renderClientEquipment();
   renderClientTimeline();
   renderClientValueSummary();
+  renderAdjustBar();
   const warnEl = document.getElementById('cdBackendWarning');
   if(!backendSupportsClientInfo){
     warnEl.style.display = 'block';
@@ -1818,6 +1864,7 @@ function openClientFormalReport(){
   if(!currentClientName) return;
   closeModal('modalClientDetail'); // only one overlay should be "active" at a time, or both print together
   document.getElementById('cfrSub').textContent = currentClientName;
+  renderCfrOptions();
   document.getElementById('clientFormalReportBody').innerHTML = generateClientReportHtml(currentClientName);
   openModal('modalClientFormalReport');
 }
@@ -1836,12 +1883,25 @@ function saveClientFormalReport(){
   const name = (currentClientName||'job').replace(/[^a-z0-9]+/gi,'_');
   downloadElementAsPDF('clientFormalReportBody', `Voda_Job_Report_${name}_${todayStr()}.pdf`);
 }
+let rptOpts = {values:true, detail:true};
+function renderCfrOptions(){
+  const el=document.getElementById('cfrOptions'); if(!el) return;
+  el.innerHTML = `<div class="chip ${rptOpts.values?'active':''}" onclick="setRptOpt('values')">Include values</div>
+    <div class="chip ${rptOpts.detail?'active':''}" onclick="setRptOpt('detail')">Include unit dates</div>`;
+}
+function setRptOpt(k){
+  rptOpts[k]=!rptOpts[k]; renderCfrOptions();
+  document.getElementById('clientFormalReportBody').innerHTML = generateClientReportHtml(currentClientName);
+}
 function generateClientReportHtml(name){
   const address = clientAddresses[name] || '';
-  const items = getClientItems(name);
-  const events = getClientTimeline(name);
-  const sent = events.filter(e=>e.action==='checkout');
-  const returned = events.filter(e=>e.action==='checkin' || e.action==='maintenance');
+  const sum = jobValueSummary(name);
+  const facts = sum.facts;
+  const withVals = rptOpts.values && sum.total>0;
+  const dates = facts.map(f=>f.outDate).filter(Boolean).sort();
+  const backs = facts.filter(f=>f.backDate).map(f=>f.backDate).sort();
+  const stillOut = facts.filter(f=>f.stillOut).length;
+  const onSite = dates.length ? `${fmtDate(dates[0])} – ${stillOut? 'ongoing' : (backs.length? fmtDate(backs[backs.length-1]) : '—')}` : '—';
 
   let html = `
     <div class="report-letterhead">
@@ -1852,59 +1912,35 @@ function generateClientReportHtml(name){
       </div>
     </div>
     <div class="report-meta">Generated ${fmtDate(todayStr())}</div>
-
-    <div class="report-section">
-      <div class="report-h">Job Information</div>
-      <ul>
-        <li><b>Customer:</b> ${escapeHtml(name)}</li>
-        <li><b>Address:</b> ${address? escapeHtml(address) : '—'}</li>
-        <li><b>Status:</b> ${clientStatusText(name)}</li>
-      </ul>
+    <div class="rpt-info">
+      <div><b>Customer:</b> ${escapeHtml(name)}</div>
+      <div><b>Equipment on site:</b> ${onSite}</div>
+      <div><b>Address:</b> ${address? escapeHtml(address) : '—'}</div>
+      <div><b>Status:</b> ${clientStatusText(name)}</div>
     </div>`;
 
-  if(items.length>0){
-    html += `<div class="report-section"><div class="report-h">Currently Checked Out</div><ul>`;
-    items.forEach(it=>{
-      html += `<li>${escapeHtml(it.id)} — ${escapeHtml(it.type)}${it.model? ' ('+escapeHtml(it.model)+')' : ''} &middot; ${escapeHtml(it.tech||'Unassigned')} &middot; back ${fmtDate(it.expectedReturnDate)}${isOverdue(it)?' <b>(OVERDUE)</b>':''}</li>`;
-    });
-    html += `</ul></div>`;
-  }
-
-  html += `<div class="report-section"><div class="report-h">Equipment Sent Out</div>`;
-  if(sent.length===0){
-    html += `<p>Nothing sent out yet.</p>`;
+  if(facts.length===0){
+    html += `<p>No equipment was placed on this job.</p>`;
   } else {
-    html += `<ul>`;
-    sent.forEach(e=>{
-      html += `<li>${escapeHtml(e.id)} — ${fmtDate((e.ts||'').slice(0,10))}${e.tech? ' &middot; '+escapeHtml(e.tech) : ''}${e.extra? ' &mdash; '+escapeHtml(e.extra) : ''}</li>`;
-    });
-    html += `</ul>`;
+    html += `<div class="report-section"><div class="report-h">Equipment on this job</div>
+      <table class="val-table">
+        <tr><th>Equipment</th><th class="r">Qty</th><th>Asset IDs</th>${withVals?'<th class="r">Value</th>':''}</tr>
+        ${sum.rows.map(r=>`<tr><td>${escapeHtml(r.type)}${withVals&&r.missing?' <span style="color:#b26a00;">*</span>':''}</td><td class="r">${r.qty}</td><td class="ids">${escapeHtml(compressIds(r.ids))}</td>${withVals?`<td class="r">${r.total? fmtMoney(r.total):'—'}</td>`:''}</tr>`).join('')}
+        <tr class="tot"><td>Total</td><td class="r">${sum.qty}</td><td></td>${withVals?`<td class="r">${fmtMoney(sum.total)}</td>`:''}</tr>
+      </table>
+      ${withVals && sum.missing? `<div style="font-size:11px;color:#b26a00;margin-top:4px;">* ${sum.missing} unit${sum.missing!==1?'s have':' has'} no value entered and ${sum.missing!==1?'are':'is'} not counted in the total.</div>`:''}
+      ${withVals? `<p style="margin-top:8px;font-size:11.5px;color:#444;">Values are the original purchase cost of the equipment placed at your property &mdash; restoration equipment is a significant investment to buy, maintain, and run.</p>`:''}
+    </div>`;
+    if(rptOpts.detail){
+      html += `<div class="report-section"><div class="report-h">Unit dates</div><div class="rpt-cols">
+        ${facts.map(f=>`<div>${escapeHtml(f.id)} &middot; ${fmtDate(f.outDate)} &rarr; ${f.stillOut? '<b>on site</b>' : fmtDate(f.backDate)}${isOverdueId(f.id,name)?' <b>(OVERDUE)</b>':''}</div>`).join('')}
+      </div></div>`;
+    }
   }
-  html += `</div>`;
-
-  html += `<div class="report-section"><div class="report-h">Equipment Returned to Shop</div>`;
-  if(returned.length===0){
-    html += `<p>Nothing returned yet.</p>`;
-  } else {
-    html += `<ul>`;
-    returned.forEach(e=>{
-      const tag = e.action==='maintenance' ? ' (to maintenance)' : '';
-      html += `<li>${escapeHtml(e.id)} — ${fmtDate((e.ts||'').slice(0,10))}${tag}${e.tech? ' &middot; '+escapeHtml(e.tech) : ''}${e.extra? ' &mdash; '+escapeHtml(e.extra) : ''}</li>`;
-    });
-    html += `</ul>`;
-  }
-  html += `</div>`;
-
-  const vsum = jobValueSummary(name);
-  if(vsum.qty>0 && vsum.total>0){
-    html += `<div class="report-section"><div class="report-h">Equipment Value Summary</div>
-      <p style="margin-bottom:8px;">Every piece of equipment used on this job, grouped by type, with its original purchase cost. Restoration equipment is a significant investment to buy, maintain, and run &mdash; this is the equipment that was placed at your property.</p>
-      ${valueTableHTML(vsum)}</div>`;
-  }
-
   html += `<div class="report-footer">Generated by Voda Equipment Tracker &middot; ${fmtDate(todayStr())}</div>`;
   return html;
 }
+function isOverdueId(id,name){ const it=getClientItems(name).find(x=>x.id===id); return !!(it && isOverdue(it)); }
 
 async function deleteClient(){
   if(!currentClientName) return;
@@ -2034,7 +2070,8 @@ function renderClientTimeline(){
   const sentWrap = document.getElementById('cdSentOut');
   const retWrap = document.getElementById('cdReturned');
   if(!sentWrap || !retWrap || !currentClientName) return;
-  const events = getClientTimeline(currentClientName);
+  const exSet = excludedIds(currentClientName);
+  const events = getClientTimeline(currentClientName).filter(e=>!exSet.has(e.id));
   const sent = events.filter(e=>e.action==='checkout');
   const returned = events.filter(e=>e.action==='checkin' || e.action==='maintenance');
 
@@ -2135,7 +2172,8 @@ function renderInventory(){
   document.getElementById('invViewBar').innerHTML =
     `<div class="chip ${invView==='snapshot'?'active':''}" onclick="setInvView('snapshot')">Snapshot</div>
      <div class="chip ${invView==='detail'?'active':''}" onclick="setInvView('detail')">Detailed list</div>
-     <div class="chip ${showValues?'active':''}" onclick="toggleShowValues()">$ Show values</div>`;
+     <div class="chip ${showValues?'active':''}" onclick="toggleShowValues()">$ Show values</div>
+     <div class="chip" onclick="openPrintView('inventory')">🖨 Print</div>`;
   const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
   let items = visibleInventory().filter(it=>{
     if(activeStatusFilter==='overdue'){ if(!isOverdue(it)) return false; }
@@ -2267,22 +2305,102 @@ function renderSnapshot(items){
   }).join('');
 }
 
-// Everything ever sent out on a job, grouped by equipment type
+// ---- what actually went to a job ----
+function ldate(ts){
+  const d=new Date(ts); if(isNaN(d)) return '';
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function excludedIds(name){
+  const set=new Set();
+  activityLog.filter(a=>a.jobsite===name && (a.action==='exclude'||a.action==='include'))
+    .slice().sort((x,y)=>x.ts.localeCompare(y.ts))
+    .forEach(a=>{ if(a.action==='exclude') set.add(a.id); else set.delete(a.id); });
+  return set;
+}
+// one row per unit that was ever sent to this job
+function jobItemFacts(name){
+  const ex = excludedIds(name);
+  const byId = new Map();
+  activityLog.filter(a=>a.jobsite===name && (a.action==='checkout'||a.action==='checkin'||a.action==='maintenance'))
+    .slice().sort((x,y)=>x.ts.localeCompare(y.ts))
+    .forEach(a=>{
+      let f = byId.get(a.id);
+      if(!f){
+        if(a.action!=='checkout') return;
+        const it = inventory.find(x=>x.id===a.id);
+        f = {id:a.id, type:(it&&it.type)||a.type||'Other', model:(it&&it.model)||'', value: it?valueOf(it):0,
+             tech:a.tech||'', outDate:ldate(a.ts), backDate:null, stillOut:true, excluded:ex.has(a.id)};
+        byId.set(a.id,f);
+      }
+      if(a.action==='checkout'){ f.stillOut=true; f.backDate=null; }
+      else { f.stillOut=false; f.backDate=ldate(a.ts); }
+    });
+  const arr=[...byId.values()];
+  arr.forEach(f=>{ f.sameDay = !f.stillOut && f.backDate===f.outDate; });
+  return arr.sort((x,y)=> x.type.localeCompare(y.type) || x.id.localeCompare(y.id,undefined,{numeric:true}));
+}
+// Everything that actually went to the job, grouped by equipment type
 function jobValueSummary(name){
-  const ids = new Map();
-  activityLog.forEach(a=>{ if(a.action==='checkout' && a.jobsite===name && !ids.has(a.id)) ids.set(a.id, a.type); });
+  const facts = jobItemFacts(name).filter(f=>!f.excluded);
   const byType={}; let missing=0;
-  ids.forEach((aType,id)=>{
-    const it = inventory.find(x=>x.id===id);
-    const type = (it && it.type) || aType || 'Other';
-    const v = it ? valueOf(it) : 0;
-    const r = byType[type] = byType[type] || {type, qty:0, total:0, missing:0};
-    r.qty++; r.total+=v;
-    if(!v){ r.missing++; missing++; }
+  facts.forEach(f=>{
+    const r = byType[f.type] = byType[f.type] || {type:f.type, qty:0, total:0, missing:0, ids:[]};
+    r.qty++; r.total+=f.value; r.ids.push(f.id);
+    if(!f.value){ r.missing++; missing++; }
   });
   const rows = Object.values(byType).sort((a,b)=>a.type.localeCompare(b.type));
-  return {rows, qty:ids.size, total:rows.reduce((t,r)=>t+r.total,0), missing};
+  return {rows, qty:facts.length, total:rows.reduce((t,r)=>t+r.total,0), missing, facts};
 }
+
+let adjState = {};
+function renderAdjustBar(){
+  const el=document.getElementById('cdAdjustBar'); if(!el||!currentClientName) return;
+  const facts=jobItemFacts(currentClientName);
+  if(!facts.length){ el.innerHTML=''; return; }
+  const nEx=facts.filter(f=>f.excluded).length;
+  const nSame=facts.filter(f=>f.sameDay && !f.excluded).length;
+  el.innerHTML = `<button class="export-btn" onclick="openAdjustJob()">Adjust what went to this job</button>
+    <div class="hint" style="margin-top:4px;">${facts.length-nEx} counted${nEx? ` · ${nEx} removed`:''}${nSame? ` · <span style="color:var(--amber);font-weight:700;">${nSame} returned the same day — check these</span>`:''}</div>`;
+}
+function openAdjustJob(){
+  if(!currentClientName) return;
+  const facts=jobItemFacts(currentClientName);
+  adjState={}; facts.forEach(f=>{ adjState[f.id]=!f.excluded; });
+  document.getElementById('ajSub').textContent = currentClientName;
+  renderAdjustList();
+  closeModal('modalClientDetail');
+  openModal('modalAdjustJob');
+}
+function renderAdjustList(){
+  const facts=jobItemFacts(currentClientName);
+  document.getElementById('ajList').innerHTML = facts.map(f=>`
+    <label class="adj-row">
+      <input type="checkbox" ${adjState[f.id]?'checked':''} onchange="adjState['${f.id}']=this.checked">
+      <div style="flex:1;">
+        <div class="id" style="font-weight:700;font-size:13px;">${escapeHtml(f.id)} <span style="font-weight:500;color:var(--muted);">— ${escapeHtml(f.model||f.type)}</span></div>
+        <div class="sub">Sent ${fmtDate(f.outDate)} · ${f.stillOut?'still out':'back '+fmtDate(f.backDate)}${f.sameDay?' · <span class="flag">returned same day</span>':''}</div>
+      </div>
+    </label>`).join('');
+}
+function adjustUncheckSameDay(){ jobItemFacts(currentClientName).forEach(f=>{ if(f.sameDay) adjState[f.id]=false; }); renderAdjustList(); }
+function adjustCheckAll(){ Object.keys(adjState).forEach(k=>adjState[k]=true); renderAdjustList(); }
+function closeAdjustJob(){ closeModal('modalAdjustJob'); if(currentClientName) openClientDetail(currentClientName); }
+async function saveAdjustJob(){
+  const name=currentClientName; if(!name) return;
+  let changed=0;
+  jobItemFacts(name).forEach(f=>{
+    const wantCounted = adjState[f.id]!==false;
+    if(wantCounted === !f.excluded) return;
+    addActivityEntry(wantCounted?'include':'exclude', {id:f.id,type:f.type,jobsite:name,tech:''}, wantCounted?'Counted on job report':'Did not go to job');
+    changed++;
+  });
+  if(changed) await saveActivity();
+  closeModal('modalAdjustJob');
+  renderAll();
+  openClientDetail(name);
+  showToast(changed? `Updated — ${changed} change${changed!==1?'s':''} saved` : 'No changes');
+}
+
 function valueTableHTML(sum){
   return `<table class="val-table">
     <tr><th>Equipment type</th><th class="r">Qty</th><th class="r">Value</th></tr>
@@ -2297,7 +2415,7 @@ function renderClientValueSummary(){
   if(!showValues || !currentClientName){ el.innerHTML=''; return; }
   const sum = jobValueSummary(currentClientName);
   if(sum.qty===0){ el.innerHTML=''; return; }
-  el.innerHTML = `<div class="section-title">Equipment value (everything sent to this job)</div>${valueTableHTML(sum)}`;
+  el.innerHTML = `<div class="section-title">Equipment value (what actually went to this job)</div>${valueTableHTML(sum)}`;
 }
 
 function ribbonColor(it){
@@ -2338,15 +2456,17 @@ function typeIcon(type){
 }
 
 /* ============ RENDER: ACTIVITY ============ */
+const actVerb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',sentmaintenance:'sent to maintenance from the shop',fixed:'marked fixed — back in shop',missing:'reported missing',added:'added to inventory',retired:'retired',exclude:'removed from the job report of',include:'put back on the job report of'}[a]||a);
 function renderActivity(){
   const list = document.getElementById('activityList');
   if(activityLog.length===0){ list.innerHTML = `<div class="empty">No activity yet</div>`; return; }
   const dotColor = a=>({checkout:'var(--blue)',checkin:'var(--green)',maintenance:'var(--amber)',sentmaintenance:'var(--amber)',fixed:'var(--green)',missing:'var(--red)',added:'var(--cyan)',retired:'var(--gray)',moved:'var(--cyan-dark)'}[a]||'var(--muted)');
-  const verb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',sentmaintenance:'sent to maintenance from the shop',fixed:'marked fixed — back in shop',missing:'reported missing',added:'added to inventory',retired:'retired'}[a]||a);
+  const verb = actVerb;
   list.innerHTML = activityLog.slice(0,80).map(a=>{
     const time = new Date(a.ts);
     let txt = `<b>${a.id}</b> ${verb(a.action)}`;
     if(a.action==='checkout') txt += ` <b>${a.jobsite||'a job site'}</b> (${a.tech||'unassigned'})`;
+    if(a.action==='exclude'||a.action==='include') txt += ` <b>${a.jobsite||''}</b>`;
     if(a.extra) txt += ` — ${a.extra}`;
     return `<div class="activity-item">
       <div class="dot" style="background:${dotColor(a.action)}"></div>
@@ -2621,6 +2741,95 @@ function exportCSV(){
   showToast('CSV downloaded');
 }
 
+
+/* ============ PRINT SNAPSHOTS (Inventory / Jobs / Activity) ============ */
+let pvKind = '';
+function pvLetterhead(title, sub){
+  return `<div class="report-letterhead">
+      <img src="data:image/png;base64,${MARK_B64}" alt="Voda">
+      <div><div class="report-co-name">Voda Cleaning &amp; Restoration of Tucson</div><div class="report-doc-title">${title}</div></div>
+    </div>
+    <div class="report-meta">${sub} &middot; printed ${fmtDate(todayStr())} ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>`;
+}
+function inventoryPrintHtml(){
+  const labels = {all:'All equipment',Jobsite:'On jobs',overdue:'Overdue'};
+  const filt = labels[activeStatusFilter] || activeStatusFilter;
+  const items = visibleInventory().filter(it=>{
+    if(activeStatusFilter==='overdue') return isOverdue(it);
+    return activeStatusFilter==='all' || it.status===activeStatusFilter;
+  });
+  const wv = showValues;
+  let html = pvLetterhead('Equipment Inventory Snapshot', escapeHtml(filt));
+  if(!items.length) return html+'<p>No equipment matches.</p>';
+  const byType={}; items.forEach(it=>{ (byType[it.type]=byType[it.type]||[]).push(it); });
+  const homeOrder=['Shop',...customLocations];
+  const rank=l=>{ const h=homeOrder.indexOf(l); if(h>=0) return h; const f=['Maintenance','Missing','Retired'].indexOf(l); return f>=0?100+f:1000; };
+  let gQty=0,gVal=0;
+  html += `<table class="val-table"><tr><th>Location</th><th class="r">Qty</th><th>Asset IDs</th>${wv?'<th class="r">Value</th>':''}</tr>`;
+  Object.keys(byType).sort().forEach(type=>{
+    const arr=byType[type]; const tv=arr.reduce((t,i)=>t+valueOf(i),0);
+    const out=arr.filter(i=>i.status==='Jobsite').length, home=arr.filter(i=>isHomeStatus(i.status)).length;
+    html += `<tr class="grp"><td colspan="${wv?3:3}">${escapeHtml(type)} &mdash; ${arr.length} total${home?` &middot; ${home} in shop`:''}${out?` &middot; ${out} out`:''}</td>${wv?`<td class="r">${tv?fmtMoney(tv):'—'}</td>`:''}</tr>`;
+    gQty+=arr.length; gVal+=tv;
+    const byLoc={}; arr.forEach(it=>{ (byLoc[locOf(it)]=byLoc[locOf(it)]||[]).push(it); });
+    Object.keys(byLoc).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b)).forEach(loc=>{
+      const li=byLoc[loc]; const lv=li.reduce((t,i)=>t+valueOf(i),0);
+      html += `<tr><td>${escapeHtml(loc)}</td><td class="r">${li.length}</td><td class="ids">${escapeHtml(compressIds(li.map(i=>i.id)))}</td>${wv?`<td class="r">${lv?fmtMoney(lv):'—'}</td>`:''}</tr>`;
+    });
+  });
+  html += `<tr class="tot"><td>Total</td><td class="r">${gQty}</td><td></td>${wv?`<td class="r">${fmtMoney(gVal)}</td>`:''}</tr></table>`;
+  return html;
+}
+function jobsPrintHtml(){
+  const cat = jobsCategory==='active' ? 'Active jobs' : 'Post jobs';
+  const rows = getClientNames().map(name=>{
+    const items=getClientItems(name);
+    const hasHistory=activityLog.some(a=>a.jobsite===name);
+    return {name, items, isNew: items.length===0 && !hasHistory};
+  }).filter(r=> jobsCategory==='active' ? (r.items.length>0||r.isNew) : (r.items.length===0&&!r.isNew))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  const wv=showValues;
+  let html = pvLetterhead('Jobs List', cat);
+  if(!rows.length) return html+'<p>No jobs in this list.</p>';
+  html += `<table class="val-table"><tr><th>Customer / address</th><th class="r">Out</th><th>Equipment out now</th>${wv?'<th class="r">Value out</th>':''}</tr>`;
+  rows.forEach(r=>{
+    const addr=clientAddresses[r.name]||'';
+    const v=r.items.reduce((t,i)=>t+valueOf(i),0);
+    const byType={}; r.items.forEach(i=>{ (byType[i.type]=byType[i.type]||[]).push(i.id); });
+    const txt = Object.keys(byType).sort().map(t=>`${t}: ${compressIds(byType[t])}`).join(' | ');
+    html += `<tr><td><b>${escapeHtml(r.name)}</b>${addr?`<br><span style="font-size:11px;color:#555;">${escapeHtml(addr)}</span>`:''}</td><td class="r">${r.items.length}</td><td class="ids">${escapeHtml(txt)||'—'}</td>${wv?`<td class="r">${v?fmtMoney(v):'—'}</td>`:''}</tr>`;
+  });
+  return html+'</table>';
+}
+function activityPrintHtml(){
+  let html = pvLetterhead('Recent Activity', 'Latest 150 entries');
+  html += `<table class="val-table"><tr><th>When</th><th>Activity</th></tr>`;
+  activityLog.slice(0,150).forEach(a=>{
+    const t=new Date(a.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    let txt=`<b>${escapeHtml(a.id)}</b> ${escapeHtml(actVerb(a.action))}`;
+    if(a.action==='checkout'||a.action==='exclude'||a.action==='include') txt+=` <b>${escapeHtml(a.jobsite||'')}</b>`;
+    if(a.action==='checkout' && a.tech) txt+=` (${escapeHtml(a.tech)})`;
+    if(a.extra) txt+=` &mdash; ${escapeHtml(a.extra)}`;
+    html += `<tr><td style="white-space:nowrap;">${t}</td><td>${txt}</td></tr>`;
+  });
+  return html+'</table>';
+}
+function openPrintView(kind){
+  pvKind=kind;
+  const map={inventory:['Inventory Snapshot',inventoryPrintHtml],jobs:['Jobs List',jobsPrintHtml],activity:['Activity',activityPrintHtml]};
+  const [title,fn]=map[kind];
+  document.getElementById('pvTitle').textContent=title;
+  document.getElementById('printViewBody').innerHTML=fn();
+  openModal('modalPrintView');
+}
+function printPrintView(){
+  document.body.classList.add('printing-overlay');
+  window.print();
+  window.onafterprint = ()=>{ document.body.classList.remove('printing-overlay'); };
+  setTimeout(()=>document.body.classList.remove('printing-overlay'), 1000);
+}
+function savePrintView(){ downloadElementAsPDF('printViewBody', `Voda_${pvKind}_${todayStr()}.pdf`); }
+
 /* ============ NAV ============ */
 function switchView(v){
   currentView = v;
@@ -2681,7 +2890,7 @@ function openDetail(id){
   }
   document.getElementById('dActions').innerHTML = actions;
 
-  const hist = activityLog.filter(a=>a.id===id).slice(0,15);
+  const hist = activityLog.filter(a=>a.id===id && a.action!=='exclude' && a.action!=='include').slice(0,15);
   document.getElementById('dHistory').innerHTML = hist.length? hist.map(a=>{
     const verb = ({checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',sentmaintenance:'Sent to maintenance',fixed:'Marked fixed',missing:'Reported missing',added:'Added to inventory',retired:'Retired',moved:'Moved'}[a.action]||a.action);
     const time = new Date(a.ts);
