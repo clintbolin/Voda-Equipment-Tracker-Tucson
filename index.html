@@ -217,6 +217,32 @@ header.top::after{
 .fleet-report-doc .val-table{font-size:12px;}
 .fleet-report-doc .val-table td.ids{font-size:11px;color:#444;}
 .fleet-report-doc .val-table tr.grp td{background:#F1F4F7;font-weight:700;color:#0A1F3D;}
+.scan-tally{display:none;margin:6px 0 2px;padding:9px 12px;border-radius:10px;background:var(--gray-bg);font-size:12.5px;line-height:1.5;}
+.scan-tally.show{display:block;}
+.scan-tally b{color:var(--navy-icon);}
+[data-theme="dark"] .scan-tally b{color:var(--cyan);}
+.scan-big{font-size:15px;font-weight:800;display:block;}
+.scan-small{font-size:12px;font-weight:600;opacity:.9;display:block;margin-top:1px;}
+.tally-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.tally-chip{background:var(--gray-bg);border-radius:10px;padding:8px 12px;text-align:center;min-width:84px;}
+.tally-chip .n{font-size:20px;font-weight:800;color:var(--navy-icon);line-height:1.1;}
+.tally-chip .t{font-size:11px;color:var(--muted);font-weight:600;}
+.tally-chip.short{background:var(--amber-bg,#fff4e0);}
+.tally-chip.short .n{color:var(--amber);}
+[data-theme="dark"] .tally-chip .n{color:var(--cyan);}
+.vf-warn{border:2px solid var(--amber);background:var(--amber-bg,#fff4e0);border-radius:12px;padding:10px 12px;margin-bottom:12px;}
+[data-theme="dark"] .vf-warn{background:var(--card);}
+.vf-warn .vf-h{font-weight:800;font-size:13.5px;color:var(--amber);margin-bottom:6px;}
+.vf-row{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;}
+.vf-row .opts{display:flex;gap:6px;}
+.vf-opt{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;}
+.vf-opt.on-partial{background:var(--amber);border-color:var(--amber);color:#fff;}
+.vf-opt.on-missing{background:var(--red);border-color:var(--red);color:#fff;}
+.job-alert{border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;line-height:1.5;}
+.job-alert.red{background:var(--red-bg,#fdeceb);color:var(--red,#d6455b);border:1.5px solid var(--red,#d6455b);}
+.job-alert.amber{background:var(--amber-bg,#fff4e0);color:var(--amber);border:1.5px solid var(--amber);}
+.job-alert b.h{display:block;font-size:13.5px;margin-bottom:2px;}
+.job-alert .nt{color:var(--ink);font-size:11.5px;margin-top:4px;}
 .adj-row{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line);}
 .adj-row input{margin-top:3px;width:18px;height:18px;flex-shrink:0;}
 .adj-row .sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
@@ -975,6 +1001,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <span>Equipment at this job</span>
     <button class="export-btn" onclick="checkoutMoreForClient()">+ Send more out</button>
   </div>
+  <div id="cdAlerts"></div>
   <div id="cdReturnBar" style="display:none;position:sticky;top:0;z-index:5;background:#fff;padding:8px 0;margin-bottom:6px;border-bottom:1px solid var(--line);">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
       <span id="cdReturnCount" style="font-size:12.5px;font-weight:700;color:var(--navy-icon);">0 selected</span>
@@ -987,6 +1014,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <button class="btn btn-green" style="width:auto;padding:0 16px;" onclick="openBulkCheckinForClient()">Return selected</button>
       </div>
     </div>
+    <div id="cdReturnTally" style="font-size:11.5px;color:var(--muted);margin-top:4px;"></div>
   </div>
   <div id="cdEquipmentList"></div>
   <div id="cdValueSummary" style="margin-top:14px;"></div>
@@ -1093,6 +1121,24 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div id="printViewBody" class="fleet-report-doc"></div>
 </div></div>
 
+<!-- Verify equipment (before accepting out to a job / back from a job) -->
+<div class="overlay" id="modalVerify" style="z-index:220;"><div class="sheet" style="max-height:94vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title" id="vfTitle">Verify equipment</div><div class="sheet-sub" id="vfSub">—</div></div>
+    <button class="close-x" onclick="closeModal('modalVerify')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div id="vfTally" class="tally-chips"></div>
+  <div id="vfWarn"></div>
+  <div class="section-title" style="margin-top:4px;" id="vfListTitle">Items</div>
+  <div id="vfList" style="max-height:26vh;overflow:auto;border:1px solid var(--line);border-radius:10px;"></div>
+  <label class="adj-row" style="margin-top:8px;">
+    <input type="checkbox" id="vfAck" onchange="updateVerifyBtn()">
+    <div style="font-size:13px;font-weight:700;" id="vfAckTxt">I counted the equipment and it matches this list</div>
+  </label>
+  <div class="btn-row"><button class="btn btn-primary" id="vfBtn" onclick="vfConfirm()" disabled>Confirm</button></div>
+</div></div>
+
 <!-- Scan -->
 <div class="overlay" id="modalScan"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -1106,6 +1152,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div class="scan-status" id="scanStatusTxt">Starting camera…</div>
   </div>
   <div id="scanLastResult" class="scan-last-result"></div>
+  <div id="scanTally" class="scan-tally"></div>
   <div class="or-div">or enter code manually</div>
   <div class="field" style="margin-bottom:6px;">
     <input id="manualCode" placeholder="e.g. DH-005" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')manualLookup()">
@@ -1963,6 +2010,7 @@ function renderClientEquipment(){
   const wrap = document.getElementById('cdEquipmentList');
   const bar = document.getElementById('cdReturnBar');
   if(!wrap || !currentClientName) return;
+  renderClientAlerts();
   const items = getClientItems(currentClientName);
   document.getElementById('cdClientSub').textContent = clientStatusText(currentClientName);
   if(items.length===0){
@@ -1988,6 +2036,8 @@ function toggleClientReturn(id, checked){
 function updateClientReturnCount(){
   const el = document.getElementById('cdReturnCount');
   if(el) el.textContent = `${clientReturnSelected.size} selected`;
+  const tl=document.getElementById('cdReturnTally');
+  if(tl) tl.innerHTML = clientReturnSelected.size ? tallyText(clientReturnSelected) : '';
 }
 function selectAllClientReturn(){
   if(!currentClientName) return;
@@ -2456,7 +2506,7 @@ function typeIcon(type){
 }
 
 /* ============ RENDER: ACTIVITY ============ */
-const actVerb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',sentmaintenance:'sent to maintenance from the shop',fixed:'marked fixed — back in shop',missing:'reported missing',added:'added to inventory',retired:'retired',exclude:'removed from the job report of',include:'put back on the job report of'}[a]||a);
+const actVerb = a=>({checkout:'checked out to',checkin:'checked back in',maintenance:'sent to maintenance',sentmaintenance:'sent to maintenance from the shop',fixed:'marked fixed — back in shop',missing:'reported missing',added:'added to inventory',retired:'retired',partial:'left on the job (partial pick-up) at',exclude:'removed from the job report of',include:'put back on the job report of'}[a]||a);
 function renderActivity(){
   const list = document.getElementById('activityList');
   if(activityLog.length===0){ list.innerHTML = `<div class="empty">No activity yet</div>`; return; }
@@ -2892,7 +2942,7 @@ function openDetail(id){
 
   const hist = activityLog.filter(a=>a.id===id && a.action!=='exclude' && a.action!=='include').slice(0,15);
   document.getElementById('dHistory').innerHTML = hist.length? hist.map(a=>{
-    const verb = ({checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',sentmaintenance:'Sent to maintenance',fixed:'Marked fixed',missing:'Reported missing',added:'Added to inventory',retired:'Retired',moved:'Moved'}[a.action]||a.action);
+    const verb = ({partial:'Left on job (partial pick-up)',checkout:'Checked out',checkin:'Checked in',maintenance:'Sent to maintenance',sentmaintenance:'Sent to maintenance',fixed:'Marked fixed',missing:'Reported missing',added:'Added to inventory',retired:'Retired',moved:'Moved'}[a.action]||a.action);
     const time = new Date(a.ts);
     return `<div class="history-item"><div class="h-txt">${verb}${a.jobsite? ' — '+a.jobsite:''}</div><div class="h-time">${time.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div>`;
   }).join('') : `<div class="hint">No history yet.</div>`;
@@ -2978,6 +3028,10 @@ function toggleMaintWarn(){
   document.getElementById('inMaintWrap').style.display = (v==='Needs Repair'||v==='Out of Service') ? 'block':'none';
 }
 async function confirmCheckin(){
+  if(bulkCheckinIds && currentClientName){ openVerifyReturn((info)=>commitCheckin(info)); return; }
+  await commitCheckin(null);
+}
+async function commitCheckin(info){
   const ids = bulkCheckinIds ? [...bulkCheckinIds] : (currentDetailId ? [currentDetailId] : []);
   if(ids.length===0) return;
   const cond = document.getElementById('inCondition').value;
@@ -2998,6 +3052,18 @@ async function confirmCheckin(){
     it.jobsite=''; it.tech=''; it.checkedOutDate=''; it.expectedReturnDate='';
     processed++;
   });
+  // Items on this job that are NOT coming back today: record why
+  let nPartial=0, nMissing=0;
+  if(info && info.decisions){
+    Object.keys(info.decisions).forEach(id=>{
+      const it = inventory.find(i=>i.id===id);
+      if(!it) return;
+      const kind = info.decisions[id];
+      const reason = (kind==='missing' ? 'Missing' : 'Partial pick-up') + (info.note? ': '+info.note : '');
+      if(kind==='missing'){ it.status='Missing'; addActivityEntry('missing', Object.assign({}, it, {tech:checkedInBy||it.tech}), reason); nMissing++; }
+      else { addActivityEntry('partial', Object.assign({}, it, {tech:checkedInBy||it.tech}), reason); nPartial++; }
+    });
+  }
   if(checkedInBy) techsKnown.add(checkedInBy);
   await saveActivity();
   await saveInventory();
@@ -3011,7 +3077,7 @@ async function confirmCheckin(){
     renderClientTimeline();
   }
   showToast(wasBulk
-    ? `${processed} item${processed!==1?'s':''} checked in to ${returnLocation}`
+    ? `${processed} item${processed!==1?'s':''} checked in to ${returnLocation}` + (nPartial? ` · ${nPartial} left on job` : '') + (nMissing? ` · ${nMissing} marked missing` : '')
     : (routeMaint? `${ids[0]} routed to maintenance` : `${ids[0]} checked in to ${returnLocation}`));
 }
 
@@ -3335,9 +3401,15 @@ function toggleKit(id, checked){
   updateKitCount();
 }
 function updateKitCount(){
-  document.getElementById('kitCount').textContent = `${kitSelected.size} item${kitSelected.size!==1?'s':''} selected`;
+  document.getElementById('kitCount').textContent = `${kitSelected.size} item${kitSelected.size!==1?'s':''} selected` + (kitSelected.size? ' — '+tallyByType(kitSelected).map(r=>r.n+' '+pluralType(r.type,r.n)).join(', ') : '');
 }
 async function confirmKit(){
+  const js = document.getElementById('kitJobsite').value.trim();
+  if(!js){ showToast('Add a customer first'); return; }
+  if(kitSelected.size===0){ showToast('Select at least one item'); return; }
+  openVerifyOut(()=>doConfirmKit(), js);
+}
+async function doConfirmKit(){
   const jobsite = document.getElementById('kitJobsite').value.trim();
   const address = document.getElementById('kitAddress').value.trim();
   const tech = document.getElementById('kitTech').value.trim();
@@ -3377,6 +3449,162 @@ async function confirmKit(){
   if(returnTo) openClientDetail(returnTo);
 }
 
+
+/* ============ TALLIES, VERIFY STEP, PICK-UP CHECKS ============ */
+function pluralType(type,n){ return n===1 ? type : (/s$/i.test(type) ? type : type+'s'); }
+function tallyByType(ids){
+  const m={};
+  [...ids].forEach(id=>{ const it=inventory.find(i=>i.id===id); const t=(it&&it.type)||'Other'; m[t]=(m[t]||0)+1; });
+  return Object.keys(m).sort().map(t=>({type:t,n:m[t]}));
+}
+function tallyText(ids){
+  const rows=tallyByType(ids);
+  if(!rows.length) return 'Nothing scanned yet';
+  return rows.map(r=>`<b>${r.n}</b> ${escapeHtml(pluralType(r.type,r.n))}`).join(' · ') + ` &mdash; <b>${[...ids].length}</b> total`;
+}
+function scanSet(){
+  return scanMode==='clientReturn' ? clientReturnSelected : scanMode==='jobKit' ? kitSelected : scanMode==='bulkMove' ? bulkMoveSelected : null;
+}
+function updateScanTally(){
+  const el=document.getElementById('scanTally'); if(!el) return;
+  const set=scanSet();
+  if(!set){ el.className='scan-tally'; el.innerHTML=''; return; }
+  let html;
+  if(scanMode==='clientReturn' && currentClientName){
+    const expected=getClientItems(currentClientName);
+    const exp={}; expected.forEach(i=>{ exp[i.type]=(exp[i.type]||0)+1; });
+    const got={}; [...set].forEach(id=>{ const it=inventory.find(i=>i.id===id); if(it) got[it.type]=(got[it.type]||0)+1; });
+    const parts=Object.keys(exp).sort().map(t=>`<b>${got[t]||0}</b> of ${exp[t]} ${escapeHtml(pluralType(t,exp[t]))}`);
+    const remaining=expected.length-[...set].filter(id=>expected.some(x=>x.id===id)).length;
+    html = `Picked up so far: ${parts.join(' · ')}<br>${remaining>0? `<span style="color:var(--amber);font-weight:700;">${remaining} still to scan</span>` : `<span style="color:var(--green);font-weight:700;">Everything on this job is scanned ✓</span>`}`;
+  } else {
+    html = `Scanned so far: ${tallyText(set)}`;
+  }
+  el.className='scan-tally show'; el.innerHTML=html;
+}
+
+let vf = null;
+function typeChipsHTML(ids, expectedItems){
+  const rows=tallyByType(ids);
+  const exp={}; if(expectedItems) expectedItems.forEach(i=>{ exp[i.type]=(exp[i.type]||0)+1; });
+  const types=new Set([...rows.map(r=>r.type), ...Object.keys(exp)]);
+  return [...types].sort().map(t=>{
+    const n=(rows.find(r=>r.type===t)||{n:0}).n;
+    const short = expectedItems && n<(exp[t]||0);
+    return `<div class="tally-chip ${short?'short':''}"><div class="n">${n}${expectedItems?`<span style="font-size:13px;font-weight:700;"> / ${exp[t]||0}</span>`:''}</div><div class="t">${escapeHtml(pluralType(t,n===1?1:2))}</div></div>`;
+  }).join('') + `<div class="tally-chip"><div class="n">${[...ids].length}${expectedItems?`<span style="font-size:13px;font-weight:700;"> / ${expectedItems.length}`+'</span>':''}</div><div class="t">Total</div></div>`;
+}
+function vfItemsHTML(ids){
+  return [...ids].map(id=>inventory.find(i=>i.id===id)).filter(Boolean)
+    .sort((a,b)=>a.type.localeCompare(b.type)||a.id.localeCompare(b.id,undefined,{numeric:true}))
+    .map(it=>`<div class="kit-row"><div><div class="id">${escapeHtml(it.id)}</div><div class="model">${escapeHtml(it.type)}${it.model?' — '+escapeHtml(it.model):''}</div></div></div>`).join('');
+}
+function openVerifyOut(onConfirm, jobsite){
+  const ids=[...kitSelected];
+  vf={mode:'out', ids, onConfirm, unpicked:[], decisions:{}};
+  document.getElementById('vfTitle').textContent='Verify before sending out';
+  document.getElementById('vfSub').textContent=`Going to ${jobsite}`;
+  document.getElementById('vfTally').innerHTML=typeChipsHTML(ids,null);
+  document.getElementById('vfWarn').innerHTML='';
+  document.getElementById('vfListTitle').textContent=`Items going out (${ids.length})`;
+  document.getElementById('vfList').innerHTML=vfItemsHTML(ids);
+  document.getElementById('vfAckTxt').textContent='I counted the equipment and it matches this list';
+  document.getElementById('vfBtn').textContent=`Send ${ids.length} item${ids.length!==1?'s':''} out`;
+  document.getElementById('vfAck').checked=false;
+  updateVerifyBtn();
+  openModal('modalVerify');
+}
+function openVerifyReturn(onConfirm){
+  const name=currentClientName;
+  const picked=[...bulkCheckinIds];
+  const expected=getClientItems(name);
+  const unpicked=expected.filter(i=>!bulkCheckinIds.has(i.id));
+  vf={mode:'in', ids:picked, onConfirm, unpicked:unpicked.map(i=>i.id), decisions:{}};
+  document.getElementById('vfTitle').textContent='Verify pick-up';
+  document.getElementById('vfSub').textContent=`Coming back from ${name}`;
+  document.getElementById('vfTally').innerHTML=typeChipsHTML(picked,expected);
+  document.getElementById('vfListTitle').textContent=`Items coming back (${picked.length})`;
+  document.getElementById('vfList').innerHTML=vfItemsHTML(picked);
+  renderVfWarn();
+  document.getElementById('vfAckTxt').textContent = unpicked.length ? 'I counted the equipment and the reasons above are correct' : 'I counted the equipment and it matches this list';
+  document.getElementById('vfBtn').textContent=`Confirm check-in (${picked.length})`;
+  document.getElementById('vfAck').checked=false;
+  updateVerifyBtn();
+  openModal('modalVerify');
+}
+function renderVfWarn(){
+  const el=document.getElementById('vfWarn');
+  if(!vf || vf.mode!=='in' || !vf.unpicked.length){ el.innerHTML=''; return; }
+  const oldNote=(document.getElementById('vfNote')||{}).value||'';
+  const ups=vf.unpicked.map(id=>inventory.find(i=>i.id===id)).filter(Boolean);
+  el.innerHTML=`<div class="vf-warn">
+    <div class="vf-h">⚠ ${ups.length} item${ups.length!==1?'s':''} from this job ${ups.length!==1?'are':'is'} NOT being picked up</div>
+    <div style="font-size:12px;margin-bottom:6px;">${escapeHtml(tallyByType(vf.unpicked).map(r=>r.n+' '+pluralType(r.type,r.n)).join(', '))} will stay on this job. Pick a reason for each:</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+      <span class="vf-opt" onclick="vfSetAll('partial')">All: Partial pick-up</span>
+      <span class="vf-opt" onclick="vfSetAll('missing')">All: Missing</span>
+    </div>
+    ${ups.map(it=>`<div class="vf-row"><div><b>${escapeHtml(it.id)}</b> <span style="color:var(--muted);">${escapeHtml(it.type)}</span></div>
+      <div class="opts">
+        <span class="vf-opt ${vf.decisions[it.id]==='partial'?'on-partial':''}" onclick="vfSet('${it.id}','partial')">Partial pick-up</span>
+        <span class="vf-opt ${vf.decisions[it.id]==='missing'?'on-missing':''}" onclick="vfSet('${it.id}','missing')">Missing</span>
+      </div></div>`).join('')}
+    <div class="field" style="margin:8px 0 0;"><label style="font-size:12px;">Note (e.g. "kitchen still drying, bedrooms done")</label>
+      <textarea id="vfNote" placeholder="Why isn't everything coming back today?"></textarea></div>
+  </div>`;
+  document.getElementById('vfNote').value=oldNote;
+}
+function vfSet(id,v){ vf.decisions[id]=v; renderVfWarn(); updateVerifyBtn(); }
+function vfSetAll(v){ vf.unpicked.forEach(id=>vf.decisions[id]=v); renderVfWarn(); updateVerifyBtn(); }
+function updateVerifyBtn(){
+  if(!vf) return;
+  const reasonsDone = vf.unpicked.every(id=>vf.decisions[id]);
+  const ack=document.getElementById('vfAck').checked;
+  const btn=document.getElementById('vfBtn');
+  btn.disabled = !(ack && reasonsDone);
+  btn.title = !reasonsDone ? 'Choose a reason for each item not being picked up' : (!ack ? 'Tick the box to confirm your count' : '');
+}
+async function vfConfirm(){
+  if(!vf) return;
+  const note=(document.getElementById('vfNote')||{}).value||'';
+  const info={decisions:{...vf.decisions}, note:note.trim()};
+  const cb=vf.onConfirm;
+  closeModal('modalVerify');
+  vf=null;
+  await cb(info);
+}
+
+// ---- job page alerts: missing + not-yet-returned ----
+function renderClientAlerts(){
+  const el=document.getElementById('cdAlerts'); if(!el || !currentClientName) return;
+  const name=currentClientName;
+  const missing=visibleInventory().filter(i=>i.status==='Missing' && i.jobsite===name);
+  const facts=jobItemFacts(name).filter(f=>!f.excluded);
+  const stillOut=getClientItems(name);
+  const returned=facts.filter(f=>!f.stillOut).length;
+  let html='';
+  if(missing.length){
+    html+=`<div class="job-alert red"><b class="h">⚠ ${missing.length} missing from this job</b>
+      ${missing.map(i=>`<b>${escapeHtml(i.id)}</b> <span style="opacity:.85;">${escapeHtml(i.type)}</span>`).join(' · ')}
+      <div class="nt">Found it? Open it from Inventory and tap “Found — back in shop”.</div></div>`;
+  }
+  if(stillOut.length && returned>0){
+    html+=`<div class="job-alert amber"><b class="h">${returned} of ${facts.length} returned — ${stillOut.length} still on site</b>
+      ${stillOut.map(i=>`<b>${escapeHtml(i.id)}</b> <span style="opacity:.85;">${escapeHtml(i.type)}</span>`).join(' · ')}</div>`;
+  }
+  const seen=new Set(), notes=[];
+  activityLog.filter(a=>a.jobsite===name && (a.action==='partial'||a.action==='missing'))
+    .slice().sort((x,y)=>y.ts.localeCompare(x.ts))
+    .forEach(a=>{ if(seen.has(a.id)) return; seen.add(a.id);
+      const stillRel = a.action==='partial' ? stillOut.some(i=>i.id===a.id) : missing.some(i=>i.id===a.id);
+      if(stillRel) notes.push(a); });
+  if(notes.length){
+    html+=`<div class="job-alert amber" style="background:var(--card);color:var(--ink);"><b class="h" style="color:var(--amber);">Pick-up notes</b>
+      ${notes.map(a=>`<div class="nt" style="margin-top:3px;"><b>${escapeHtml(a.id)}</b> — ${escapeHtml(a.extra || (a.action==='missing'?'Missing':'Partial pick-up'))} <span style="color:var(--muted);">(${fmtDate(ldate(a.ts))}${a.tech?' · '+escapeHtml(a.tech):''})</span></div>`).join('')}</div>`;
+  }
+  el.innerHTML=html;
+}
+
 /* ============ SCAN ============ */
 let lastScanCode = null;
 let lastScanTime = 0;
@@ -3390,6 +3618,7 @@ async function openScan(mode){
   document.getElementById('manualCode').value='';
   const lastResultEl = document.getElementById('scanLastResult');
   if(lastResultEl){ lastResultEl.className = 'scan-last-result'; lastResultEl.innerHTML = ''; }
+  updateScanTally();
   const statusTxt = document.getElementById('scanStatusTxt');
   const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
   const modeMsg = {
@@ -3458,9 +3687,15 @@ function showScanLastResult(result){
   if(!el) return;
   el.className = 'scan-last-result show ' + (result.ok ? 'ok' : 'fail');
   const icon = result.ok
-    ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  el.innerHTML = `${icon}<span>${escapeHtml(result.msg)}${result.count!==undefined?` — ${result.count} total`:''}</span>`;
+    ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const it = result.it;
+  if(it){
+    el.innerHTML = `${icon}<div><span class="scan-big">${escapeHtml(it.id)} &middot; ${escapeHtml(it.type)}</span><span class="scan-small">${it.model? escapeHtml(it.model)+' &mdash; ':''}${escapeHtml(result.ok? (result.note||'added') : result.msg)}</span></div>`;
+  } else {
+    el.innerHTML = `${icon}<span>${escapeHtml(result.msg)}</span>`;
+  }
+  updateScanTally();
 }
 function flashScanFrame(ok){
   const frame = document.querySelector('#modalScan .scan-frame');
@@ -3509,6 +3744,8 @@ function lookupCode(code){
     openDetail(it.id);
     result = {ok:true, msg:it.id};
   }
+  result.it = it;
+  if(result.ok) result.note = result.msg.replace(it.id,'').trim();
   if(scanMode!=='lookup') showToast(result.msg + (result.count!==undefined ? ` (${result.count} total)` : ''));
   return result;
 }
