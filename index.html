@@ -922,6 +922,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div class="field">
     <label>Expected return date</label>
     <input type="date" id="outReturn">
+    <div id="outLockChips" style="display:none;"><div class="hint" style="margin-top:6px;">Lock box — stays for the whole job. Pick a length or set any date above:</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"><span class="vf-opt" onclick="setLockDays('outReturn',14)">2 weeks</span><span class="vf-opt" onclick="setLockDays('outReturn',30)">30 days</span><span class="vf-opt" onclick="setLockDays('outReturn',60)">60 days</span><span class="vf-opt" onclick="setLockDays('outReturn',90)">3 months</span><span class="vf-opt" onclick="setLockDays('outReturn',180)">6 months</span></div></div>
   </div>
   <div class="field">
     <label>Notes (optional)</label>
@@ -1274,6 +1275,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <label>Expected return date</label>
     <input type="date" id="kitReturn">
   </div>
+  <div class="field" id="kitLockWrap" style="display:none;">
+    <label>Lock box return date</label>
+    <input type="date" id="kitLockReturn">
+    <div class="hint">Lock boxes stay for the whole job (mitigation and reconstruction), so they get their own date — anywhere from 2 weeks to 6 months. Everything else uses the date above.</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"><span class="vf-opt" onclick="setLockDays('kitLockReturn',14)">2 weeks</span><span class="vf-opt" onclick="setLockDays('kitLockReturn',30)">30 days</span><span class="vf-opt" onclick="setLockDays('kitLockReturn',60)">60 days</span><span class="vf-opt" onclick="setLockDays('kitLockReturn',90)">3 months</span><span class="vf-opt" onclick="setLockDays('kitLockReturn',180)">6 months</span></div>
+  </div>
   <div class="field">
     <label>Notes (optional)</label>
     <textarea id="kitNotes" placeholder="Accessories included, condition notes, etc."></textarea>
@@ -1415,6 +1421,13 @@ let bulkCheckinIds = null;
 let clientAddresses = {};
 
 function todayStr(){ return new Date().toISOString().slice(0,10); }
+function isLockBox(it){ return !!it && /lock\s*-?\s*box/i.test(it.type||''); }
+function setLockDays(targetId, days){ const el=document.getElementById(targetId); if(el) el.value = addDays(days); }
+function updateKitLockField(){
+  const wrap=document.getElementById('kitLockWrap'); if(!wrap) return;
+  const any=[...kitSelected].some(id=>isLockBox(inventory.find(i=>i.id===id)));
+  wrap.style.display = any ? 'block' : 'none';
+}
 function addDays(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(s){
@@ -2959,7 +2972,9 @@ function openCheckout(id){
   document.getElementById('outJobsite').value = '';
   document.getElementById('outAddress').value = '';
   document.getElementById('outTech').value = '';
-  document.getElementById('outReturn').value = addDays(4);
+  { const cur = inventory.find(i=>i.id===currentDetailId); const lb = isLockBox(cur);
+    document.getElementById('outReturn').value = addDays(lb ? 30 : 4);
+    document.getElementById('outLockChips').style.display = lb ? 'block' : 'none'; }
   document.getElementById('outNotes').value = '';
   document.getElementById('jobsiteList').innerHTML = [...jobsitesKnown].map(j=>`<option value="${j}">`).join('');
   document.getElementById('techList').innerHTML = [...techsKnown].map(t=>`<option value="${t}">`).join('');
@@ -3367,6 +3382,7 @@ async function openJobKit(returnToClient){
   document.getElementById('kitAddress').value='';
   document.getElementById('kitTech').value='';
   document.getElementById('kitReturn').value = addDays(4);
+  document.getElementById('kitLockReturn').value = addDays(30);
   document.getElementById('kitNotes').value = '';
   document.getElementById('jobsiteList2').innerHTML = [...jobsitesKnown].map(j=>`<option value="${j}">`).join('');
   document.getElementById('techList2').innerHTML = [...techsKnown].map(t=>`<option value="${t}">`).join('');
@@ -3401,6 +3417,7 @@ function toggleKit(id, checked){
   updateKitCount();
 }
 function updateKitCount(){
+  updateKitLockField();
   document.getElementById('kitCount').textContent = `${kitSelected.size} item${kitSelected.size!==1?'s':''} selected` + (kitSelected.size? ' — '+tallyByType(kitSelected).map(r=>r.n+' '+pluralType(r.type,r.n)).join(', ') : '');
 }
 async function confirmKit(){
@@ -3414,6 +3431,7 @@ async function doConfirmKit(){
   const address = document.getElementById('kitAddress').value.trim();
   const tech = document.getElementById('kitTech').value.trim();
   const ret = document.getElementById('kitReturn').value;
+  const lockRet = document.getElementById('kitLockReturn').value || addDays(30);
   const notes = document.getElementById('kitNotes').value.trim();
   if(!jobsite){ showToast('Add a customer first'); return; }
   if(kitSelected.size===0){ showToast('Select at least one item'); return; }
@@ -3427,7 +3445,7 @@ async function doConfirmKit(){
       return;
     }
     it.status='Jobsite'; it.jobsite=jobsite; it.tech=tech;
-    it.checkedOutDate=todayStr(); it.expectedReturnDate=ret;
+    it.checkedOutDate=todayStr(); it.expectedReturnDate=isLockBox(it) ? lockRet : ret;
     it.notes = notes;
     addActivityEntry('checkout', it, notes);
     sentCount++;
