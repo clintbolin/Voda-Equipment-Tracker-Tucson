@@ -1016,6 +1016,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       </div>
     </div>
     <div id="cdReturnTally" style="font-size:11.5px;color:var(--muted);margin-top:4px;"></div>
+    <div style="margin-top:6px;"><a href="#" onclick="undoSelectedSendOut();return false;" style="font-size:12px;color:var(--cyan-dark);font-weight:700;text-decoration:none;">Selected items never went to the job? Remove them from this job</a></div>
   </div>
   <div id="cdEquipmentList"></div>
   <div id="cdValueSummary" style="margin-top:14px;"></div>
@@ -1122,6 +1123,21 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div id="printViewBody" class="fleet-report-doc"></div>
 </div></div>
 
+<!-- Same-day return: did it ever reach the job? -->
+<div class="overlay" id="modalSameDay" style="z-index:230;"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">These went out today</div><div class="sheet-sub" id="sdSub">—</div></div>
+    <button class="close-x" onclick="closeModal('modalSameDay')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div style="font-size:14px;font-weight:700;margin-bottom:10px;">Did they actually make it to the job?</div>
+  <div id="sdTally" class="tally-chips"></div>
+  <div class="btn-row" style="flex-direction:column;gap:10px;">
+    <button class="btn btn-green" onclick="undoSendOut([...clientReturnSelected])">No — loaded by mistake. Put back in shop and remove from this job</button>
+    <button class="btn btn-ghost" onclick="closeModal('modalSameDay');openBulkCheckinForClient(true)">Yes — they were on site. Normal return</button>
+  </div>
+</div></div>
+
 <!-- Verify equipment (before accepting out to a job / back from a job) -->
 <div class="overlay" id="modalVerify" style="z-index:220;"><div class="sheet" style="max-height:94vh;">
   <div class="sheet-handle"></div>
@@ -1138,6 +1154,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div style="font-size:13px;font-weight:700;" id="vfAckTxt">I counted the equipment and it matches this list</div>
   </label>
   <div class="btn-row"><button class="btn btn-primary" id="vfBtn" onclick="vfConfirm()" disabled>Confirm</button></div>
+  <div id="vfHint" class="hint" style="text-align:center;margin-top:6px;"></div>
 </div></div>
 
 <!-- Scan -->
@@ -2107,8 +2124,18 @@ function addScannedItemToBulkMove(it){
   renderBulkMoveList(document.querySelector('#modalBulkMove input[placeholder="Filter list..."]')?.value || '');
   return {ok:true, msg:`${it.id} added`, count:bulkMoveSelected.size};
 }
-function openBulkCheckinForClient(){
+function openBulkCheckinForClient(skipPrompt){
   if(clientReturnSelected.size===0){ showToast('Select at least one item first'); return; }
+  if(skipPrompt!==true){
+    const today=todayStr();
+    const allToday=[...clientReturnSelected].every(id=>{ const it=inventory.find(i=>i.id===id); return it && it.checkedOutDate===today; });
+    if(allToday){
+      document.getElementById('sdSub').textContent = `${clientReturnSelected.size} item${clientReturnSelected.size!==1?'s':''} going back from ${currentClientName}`;
+      document.getElementById('sdTally').innerHTML = typeChipsHTML(clientReturnSelected,null);
+      openModal('modalSameDay');
+      return;
+    }
+  }
   bulkCheckinIds = new Set(clientReturnSelected);
   document.getElementById('inSub').textContent = `${bulkCheckinIds.size} item${bulkCheckinIds.size!==1?'s':''} returning from ${currentClientName}`;
   document.getElementById('inTech').value = '';
@@ -2375,9 +2402,9 @@ function ldate(ts){
 }
 function excludedIds(name){
   const set=new Set();
-  activityLog.filter(a=>a.jobsite===name && (a.action==='exclude'||a.action==='include'))
+  activityLog.filter(a=>a.jobsite===name && (a.action==='exclude'||a.action==='include'||a.action==='checkout'))
     .slice().sort((x,y)=>x.ts.localeCompare(y.ts))
-    .forEach(a=>{ if(a.action==='exclude') set.add(a.id); else set.delete(a.id); });
+    .forEach(a=>{ if(a.action==='exclude') set.add(a.id); else set.delete(a.id); }); // a fresh checkout to the same job counts again
   return set;
 }
 // one row per unit that was ever sent to this job
@@ -2451,6 +2478,11 @@ function closeAdjustJob(){ closeModal('modalAdjustJob'); if(currentClientName) o
 async function saveAdjustJob(){
   const name=currentClientName; if(!name) return;
   let changed=0;
+  const stillOutExcl = jobItemFacts(name).filter(f=>f.stillOut && !f.excluded && adjState[f.id]===false).map(f=>f.id);
+  if(stillOutExcl.length && confirm(`${stillOutExcl.length} of the items you unchecked are still marked as OUT on this job. Put them back in the shop too?`)){
+    await undoSendOut(stillOutExcl);
+    changed += stillOutExcl.length;
+  }
   jobItemFacts(name).forEach(f=>{
     const wantCounted = adjState[f.id]!==false;
     if(wantCounted === !f.excluded) return;
@@ -3468,6 +3500,34 @@ async function doConfirmKit(){
 }
 
 
+/* ============ LOADED BY MISTAKE: put back and remove from the job ============ */
+async function undoSendOut(ids){
+  const name=currentClientName; if(!name) return;
+  let n=0;
+  ids.forEach(id=>{
+    const it=inventory.find(i=>i.id===id);
+    if(!it || it.status!=='Jobsite' || it.jobsite!==name) return;
+    addActivityEntry('checkin', it, 'Loaded by mistake — never went to the job');
+    addActivityEntry('exclude', {id:it.id,type:it.type,jobsite:name,tech:''}, 'Did not go to job');
+    it.status='Shop'; it.jobsite=''; it.tech=''; it.checkedOutDate=''; it.expectedReturnDate='';
+    n++;
+  });
+  clientReturnSelected=new Set();
+  if(n){ await saveActivity(); await saveInventory(); }
+  closeModal('modalSameDay');
+  renderAll();
+  if(document.getElementById('modalClientDetail').classList.contains('active')){
+    renderClientEquipment(); renderClientTimeline(); renderClientValueSummary(); renderAdjustBar();
+    document.getElementById('cdClientSub').textContent = clientStatusText(name);
+  }
+  showToast(n ? `${n} item${n!==1?'s':''} put back in the shop and removed from ${name}` : 'Nothing to remove');
+}
+async function undoSelectedSendOut(){
+  if(clientReturnSelected.size===0){ showToast('Check the items that never went to the job first'); return; }
+  if(!confirm(`Put ${clientReturnSelected.size} item${clientReturnSelected.size!==1?'s':''} back in the shop and remove ${clientReturnSelected.size!==1?'them':'it'} from ${currentClientName}? They won't count as having gone to this job.`)) return;
+  await undoSendOut([...clientReturnSelected]);
+}
+
 /* ============ TALLIES, VERIFY STEP, PICK-UP CHECKS ============ */
 function pluralType(type,n){ return n===1 ? type : (/s$/i.test(type) ? type : type+'s'); }
 function tallyByType(ids){
@@ -3580,7 +3640,8 @@ function updateVerifyBtn(){
   const ack=document.getElementById('vfAck').checked;
   const btn=document.getElementById('vfBtn');
   btn.disabled = !(ack && reasonsDone);
-  btn.title = !reasonsDone ? 'Choose a reason for each item not being picked up' : (!ack ? 'Tick the box to confirm your count' : '');
+  const hint=document.getElementById('vfHint');
+  if(hint) hint.textContent = !reasonsDone ? 'To continue: pick “Partial pick-up” or “Missing” for each item above.' : (!ack ? 'To continue: tick the box above to confirm your count.' : '');
 }
 async function vfConfirm(){
   if(!vf) return;
