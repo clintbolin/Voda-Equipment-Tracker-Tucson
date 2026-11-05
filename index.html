@@ -1951,10 +1951,7 @@ function closeClientFormalReport(){
   if(name) openClientDetail(name);
 }
 function printClientFormalReport(){
-  document.body.classList.add('printing-overlay');
-  window.print();
-  window.onafterprint = ()=>{ document.body.classList.remove('printing-overlay'); };
-  setTimeout(()=>document.body.classList.remove('printing-overlay'), 1000);
+  runPrint('printing-overlay');
 }
 function saveClientFormalReport(){
   const name = (currentClientName||'job').replace(/[^a-z0-9]+/gi,'_');
@@ -2240,10 +2237,7 @@ async function downloadElementAsPDF(elementId, filename){
 function printClientReport(){
   const addr = clientAddresses[currentClientName];
   document.getElementById('cdPrintTitle').textContent = `Voda Equipment Tracker — ${currentClientName}${addr? ' — '+addr : ''} — printed ${fmtDate(todayStr())}`;
-  document.body.classList.add('printing-overlay');
-  window.print();
-  window.onafterprint = ()=>{ document.body.classList.remove('printing-overlay'); };
-  setTimeout(()=>document.body.classList.remove('printing-overlay'), 1000);
+  runPrint('printing-overlay');
 }
 function saveClientReport(){ guideToSaveAsPDF(printClientReport); }
 
@@ -2624,10 +2618,7 @@ function currentReportSelectionLabel(){
 }
 function printReportsView(){
   document.getElementById('reportsPrintTitle').textContent = `Voda Equipment Tracker — ${currentReportSelectionLabel()} — printed ${fmtDate(todayStr())}`;
-  document.body.classList.add('printing-reports');
-  window.print();
-  window.onafterprint = ()=>{ document.body.classList.remove('printing-reports'); };
-  setTimeout(()=>document.body.classList.remove('printing-reports'), 1000);
+  runPrint('printing-reports');
 }
 function saveReportsView(){ guideToSaveAsPDF(printReportsView); }
 
@@ -2637,10 +2628,7 @@ function openFleetReport(){
   openModal('modalFleetReport');
 }
 function printFleetReport(){
-  document.body.classList.add('printing-overlay');
-  window.print();
-  window.onafterprint = ()=>{ document.body.classList.remove('printing-overlay'); };
-  setTimeout(()=>document.body.classList.remove('printing-overlay'), 1000);
+  runPrint('printing-overlay');
 }
 function saveFleetReport(){
   downloadElementAsPDF('fleetReportBody', `Voda_Fleet_Report_${todayStr()}.pdf`);
@@ -2918,10 +2906,7 @@ function openPrintView(kind){
   openModal('modalPrintView');
 }
 function printPrintView(){
-  document.body.classList.add('printing-overlay');
-  window.print();
-  window.onafterprint = ()=>{ document.body.classList.remove('printing-overlay'); };
-  setTimeout(()=>document.body.classList.remove('printing-overlay'), 1000);
+  runPrint('printing-overlay');
 }
 function savePrintView(){ downloadElementAsPDF('printViewBody', `Voda_${pvKind}_${todayStr()}.pdf`); }
 
@@ -2938,7 +2923,25 @@ function switchView(v){
 
 /* ============ DETAIL MODAL ============ */
 function openModal(id){ document.getElementById(id).classList.add('active'); }
-function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+/* Print helper. The page must stay in "print mode" until the phone/computer has
+   finished building the print preview. The old code switched print mode back off after
+   1 second, which on slower phones happened BEFORE the preview was captured — so the
+   screen behind the report got printed instead. Now it only switches off when printing
+   is really finished (or after 3 minutes as a safety net, or when a window is closed). */
+let printCleanupTimer = null;
+function runPrint(cls){
+  document.body.classList.add(cls);
+  const clear = ()=>{
+    document.body.classList.remove(cls);
+    clearTimeout(printCleanupTimer);
+    window.removeEventListener('afterprint', clear);
+  };
+  window.addEventListener('afterprint', clear);
+  clearTimeout(printCleanupTimer);
+  printCleanupTimer = setTimeout(clear, 180000);
+  setTimeout(()=>window.print(), 150); // give the page a moment to apply print layout first
+}
+function closeModal(id){ document.body.classList.remove('printing-overlay','printing-reports'); document.getElementById(id).classList.remove('active'); }
 
 function openDetail(id){
   currentDetailId = id;
