@@ -1621,29 +1621,50 @@ function nextProductId(){ let m=0; products.forEach(p=>{ const n=parseInt(String
 function pName(id){ const p=products.find(x=>x.id===id); return p?p.name:id; }
 function fmtQty(n){ return (Math.round(n*100)/100).toString(); }
 
-// Re-read the latest products from the sheet right before every change, so two phones don't overwrite each other
+// Supplies changes show on screen INSTANTLY, then sync to the sheet in the background.
+// The background step re-reads the latest supplies from the sheet first and re-applies the change on top,
+// so two phones working at once don't overwrite each other.
+let supPending = 0, supQueue = Promise.resolve();
 async function supMutate(fn){
-  setSyncing(true);
-  try{
-    if(BACKEND_READY){
-      const d = await apiGetAll();
-      if(d.products===undefined || d.orders===undefined){ throw new Error('backend-not-updated'); }
-      products = (d.products||[]).map(normProduct);
-      supplyLog = d.supplyLog||[];
-      orders = (d.orders||[]).map(normOrder);
-    }
-    fn();
-    if(BACKEND_READY){
-      let r = await apiPost('saveProducts', productsForSave()); if(r && r.error) throw new Error(r.error);
-      r = await apiPost('saveSupplyLog', supplyLog.slice(-3000)); if(r && r.error) throw new Error(r.error);
-      r = await apiPost('saveOrders', ordersForSave()); if(r && r.error) throw new Error(r.error);
-    }
-    setSyncing(false);
-    return true;
-  }catch(e){
-    console.error('supplies save failed', e); setSyncing(false, true);
-    showToast(String(e.message)==='backend-not-updated' ? 'Update your Google Sheets script first (Supplies needs it)' : 'Could not save — check your connection and try again');
+  if(BACKEND_READY && !backendSupportsSupplies){
+    showToast('Update your Google Sheets script first (Supplies needs it)');
     return false;
+  }
+  try{ fn(); }catch(e){ console.error(e); showToast('Something went wrong — nothing was saved'); return false; }
+  if(!BACKEND_READY) return true;
+  supPending++; setSyncing(true);
+  supQueue = supQueue.then(()=>doSupSync(fn)).catch(()=>{});
+  return true;
+}
+async function doSupSync(fn){
+  const local = {products, orders, supplyLog};
+  let failed = false;
+  try{
+    const res = await fetch(`${CONFIG.API_URL}?action=getSupplies`);
+    if(!res.ok) throw new Error('network');
+    const d = await res.json();
+    if(d.error || d.products===undefined) throw new Error('backend-not-updated');
+    products = (d.products||[]).map(normProduct); orders = (d.orders||[]).map(normOrder); supplyLog = d.supplyLog||[];
+    const p0 = JSON.stringify(productsForSave()), o0 = JSON.stringify(ordersForSave()), logLen = supplyLog.length;
+    fn();
+    const payload = { newLog: supplyLog.slice(logLen) };
+    const pNow = productsForSave(), oNow = ordersForSave();
+    if(JSON.stringify(pNow)!==p0) payload.products = pNow;
+    if(JSON.stringify(oNow)!==o0) payload.orders = oNow;
+    const r = await apiPost('saveSupplies', payload);
+    if(r && r.error) throw new Error(r.error);
+    if(supPending<=1){
+      // all caught up — adopt the sheet's version; redraw only if another phone changed something
+      const changed = JSON.stringify(local.products)!==JSON.stringify(products) || JSON.stringify(local.orders)!==JSON.stringify(orders);
+      if(changed && currentView==='supplies' && !document.querySelector('.overlay.active')) renderSupplies();
+    } else { products=local.products; orders=local.orders; supplyLog=local.supplyLog; }
+  }catch(e){
+    failed = true;
+    console.error('supplies sync failed', e);
+    products=local.products; orders=local.orders; supplyLog=local.supplyLog;
+    showToast(String(e.message)==='backend-not-updated' ? 'Supplies need the updated Google Sheets script' : 'Could not save the last change — check your connection, then try again');
+  }finally{
+    supPending--; if(supPending<=0){ supPending=0; setSyncing(false, failed); }
   }
 }
 function logSupply(action, p, qty, before, after, ref){
