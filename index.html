@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Voda Equipment Tracker</title>
@@ -1151,18 +1152,18 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div class="sheet-head"><div><div class="sheet-title" id="prodTitle">Product</div></div><button class="close-x" onclick="closeModal('modalProduct')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
   <div class="field"><label>Product name</label><input id="pName" placeholder="e.g. Simple Green Concentrate"></div>
   <div class="field"><label>Category</label><input id="pCategory" list="pCatList" placeholder="e.g. Chemicals"><datalist id="pCatList"></datalist></div>
-  <div class="field"><label>Counted / ordered in (unit)</label><input id="pUnit" list="pUnitList" placeholder="each, box, case, roll, gallon"><datalist id="pUnitList"><option value="each"><option value="box"><option value="case"><option value="roll"><option value="bottle"><option value="gallon"><option value="bag"><option value="pack"></datalist></div>
+  <div class="field"><label>Ordered by the (case, box, pack, roll…)</label><input id="pUnit" list="pUnitList" placeholder="each, box, case, roll, gallon"><datalist id="pUnitList"><option value="each"><option value="box"><option value="case"><option value="roll"><option value="bottle"><option value="gallon"><option value="bag"><option value="pack"></datalist></div>
   <div class="field"><label>Vendor</label><input id="pVendor" list="pVendorList" placeholder="e.g. ABC Supply"><datalist id="pVendorList"></datalist></div>
   <div class="field"><label>Vendor item # (optional)</label><input id="pSku"></div>
   <div style="display:flex;gap:10px;">
-    <div class="field" style="flex:1;"><label>Par (stocked up)</label><input id="pPar" type="number" inputmode="decimal" step="any"></div>
-    <div class="field" style="flex:1;"><label>Reorder at</label><input id="pReorder" type="number" inputmode="decimal" step="any"></div>
+    <div class="field" style="flex:1;"><label>Par — cases needed to be fully stocked</label><input id="pPar" type="number" inputmode="decimal" step="any"></div>
+    <div class="field" style="flex:1;"><label>Reorder at — order when we're down to this many cases or fewer</label><input id="pReorder" type="number" inputmode="decimal" step="any"></div>
   </div>
   <div style="display:flex;gap:10px;">
-    <div class="field" style="flex:1;"><label>Items per case/pack <span style="font-weight:400;">(1 if bought singly)</span></label><input id="pPack" type="number" inputmode="decimal" step="any" value="1" oninput="updPerItem()"><div class="hint" style="font-size:11px;margin-top:3px;">Par, reorder and on-hand are counted in ITEMS. Orders go out in whole cases of this size.</div></div>
-    <div class="field" style="flex:1;"><label>Price of one case/pack</label><input id="pCost" type="number" inputmode="decimal" step="any" oninput="updPerItem()"><div class="hint" id="pPerItem" style="font-size:11px;margin-top:3px;">If items per case is 1, this is the price of one item.</div></div>
+    <div class="field" style="flex:1;"><label>Items per case/pack <span style="font-weight:400;">(1 if bought singly)</span></label><input id="pPack" type="number" inputmode="decimal" step="any" value="1" oninput="updPerItem()"><div class="hint" style="font-size:11px;margin-top:3px;">Just for information (shows the item count on the order). Everything else is counted in CASES.</div></div>
+    <div class="field" style="flex:1;"><label>Price of one case/pack (what you pay per case)</label><input id="pCost" type="number" inputmode="decimal" step="any" oninput="updPerItem()"><div class="hint" id="pPerItem" style="font-size:11px;margin-top:3px;">If items per case is 1, this is the price of one item.</div></div>
   </div>
-  <div class="field"><label>On hand right now</label><input id="pOnHand" type="number" inputmode="decimal" step="any"><div class="hint">Normally changed by Receive and Count — only type here to set a starting amount.</div></div>
+  <div class="field"><label>On hand right now (cases)</label><input id="pOnHand" type="number" inputmode="decimal" step="any"><div class="hint">Set from the Count tab and Receive. Counted in cases (1.5 = a case and a half).</div></div>
   <div class="field"><label>Linked barcodes</label><div id="pBcList" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;"></div>
     <div style="display:flex;gap:6px;"><input id="pBcCode" placeholder="Type a barcode" style="flex:1;"><input id="pBcQty" type="number" value="1" min="1" style="width:64px;" title="Units per scan"><button class="export-btn" onclick="addProdBarcode()">Add</button></div>
     <div class="hint">The number is how many units one scan counts (e.g. a case barcode = 12).</div></div>
@@ -1698,11 +1699,13 @@ function avgWeeklyUse(p){
   return used/days*7;
 }
 function needsOrder(p){ return p.active && (p.onHand+p.onOrder) <= p.reorderPoint && p.par>0; }
-function lineCost(p,qty){ return (qty/Math.max(1,p.orderPack))*p.cost; } // cost = price of one case/pack when items-per-case > 1
-function casesText(p,qty){ return p.orderPack>1 ? ` = ${fmtQty(qty/p.orderPack)} case${qty/p.orderPack===1?'':'s'}` : ''; }
+// Everything is counted in CASES: par, reorder, on hand, order quantity and price are all per case/pack.
+function lineCost(p,qty){ return qty*p.cost; }
+function casesText(p,qty){ return p.orderPack>1 ? ` (${fmtQty(qty*p.orderPack)} items)` : ''; }
 function suggestQty(p){
+  // cases to order = par minus what we have (and what's already on order), rounded UP to whole cases, at least 1
   const need = Math.max(0, p.par - p.onHand - p.onOrder);
-  return Math.max(p.orderPack, Math.ceil(need/p.orderPack)*p.orderPack);
+  return Math.max(1, Math.ceil(need - 1e-9));
 }
 function orderRows(){
   return activeProducts().filter(p=> orderShowAll || needsOrder(p) || orderSel[p.id]===true).map(p=>({
@@ -1714,8 +1717,9 @@ function orderRows(){
 /* ---------- rendering ---------- */
 function renderSupplies(){
   const el = document.getElementById('supBody'); if(!el) return;
-  document.getElementById('supBanner').innerHTML = backendSupportsSupplies ? '' :
-    `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`;
+  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/17-E · cases</div>`;
+  if(!backendSupportsSupplies) document.getElementById('supBanner').innerHTML = document.getElementById('supBanner').innerHTML.replace('__X__',
+    `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`);
   const nOrder = products.filter(needsOrder).length;
   document.getElementById('supTabs').innerHTML = [['order',`Order${nOrder?' ('+nOrder+')':''}`],['receive','Receive'],['count','Count'],['products','Products']]
     .map(([k,l])=>`<div class="chip ${supTab===k?'active':''}" onclick="setSupTab('${k}')">${l}</div>`).join('');
@@ -1885,7 +1889,7 @@ function renderCountTab(){
   const list = activeProducts();
   if(!list.length) return emptyProductsMsg();
   let html = whoField() + `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><button class="export-btn" onclick="openScan('supFind')">Scan to find a product</button><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openPrintView('countsheet')">Print count sheet</button></div>
-    <div class="hint" style="margin-bottom:6px;">Type what's actually on the shelf. Leave a product blank to skip it.</div>${supSearchBox()}`;
+    <div class="hint" style="margin-bottom:6px;">Type how many CASES/packs are on the shelf (decimals are fine: 1.5 = a case and a half). Leave a product blank to skip it.</div>${supSearchBox()}`;
   groupByCategory(list.filter(supMatches)).forEach(g=>{
     html += `<div class="section-title" style="margin-top:10px;">${escapeHtml(g.cat)}</div><div class="snap-card">`+g.items.map(p=>`
       <div class="kit-row">
@@ -1941,7 +1945,7 @@ function openProductEdit(id){
   const p = id ? products.find(x=>x.id===id) : null;
   document.getElementById('prodTitle').textContent = p ? 'Edit product' : 'Add product';
   const set=(k,v)=>{ document.getElementById(k).value = v; };
-  set('pName',p?p.name:''); set('pCategory',p?p.category:''); set('pUnit',p?p.unit:'each'); set('pVendor',p?p.vendor:'');
+  set('pName',p?p.name:''); set('pCategory',p?p.category:''); set('pUnit',p?p.unit:'case'); set('pVendor',p?p.vendor:'');
   set('pSku',p?p.vendorSku:''); set('pPar',p?p.par:''); set('pReorder',p?p.reorderPoint:''); set('pPack',p?p.orderPack:1);
   set('pCost',p&&p.cost?p.cost:''); setTimeout(updPerItem,0); set('pOnHand',p?p.onHand:''); set('pNotes',p?p.notes:'');
   editingBarcodes = p ? p.barcodes.map(b=>Object.assign({},b)) : [];
