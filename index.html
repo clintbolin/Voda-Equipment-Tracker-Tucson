@@ -440,14 +440,19 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   header.top, nav.bottom, .quick-grid{ display:none !important; }
   .content{ padding-bottom:0 !important; }
   .view{ display:none !important; }
-  body.printing-overlay .overlay:not(.active){ display:none !important; }
-  body.printing-overlay .overlay.active{
+  html,body{ height:auto !important; min-height:0 !important; overflow:visible !important; padding:0 !important; }
+  body.printing-overlay .app > *:not(.overlay){ display:none !important; }
+  body.printing-overlay .overlay:not(.print-target){ display:none !important; }
+  body.printing-overlay .overlay.print-target{
     position:static !important; display:block !important; background:none !important; padding:0 !important;
+    height:auto !important; inset:auto !important; overflow:visible !important;
   }
-  body.printing-overlay .overlay.active .sheet{
-    max-height:none !important; box-shadow:none !important; border-radius:0 !important;
-    overflow:visible !important; padding:0 !important; max-width:none !important;
+  body.printing-overlay .overlay.print-target .sheet{
+    max-height:none !important; height:auto !important; box-shadow:none !important; border-radius:0 !important;
+    overflow:visible !important; padding:0 !important; max-width:none !important; width:100% !important;
+    animation:none !important; transform:none !important; position:static !important;
   }
+  body.printing-overlay .fleet-report-doc{ box-shadow:none !important; border-radius:0 !important; }
   body.printing-overlay .sheet-handle,
   body.printing-overlay .export-btn,
   body.printing-overlay .sheet-head svg,
@@ -1154,8 +1159,8 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div class="field" style="flex:1;"><label>Reorder at</label><input id="pReorder" type="number" inputmode="decimal" step="any"></div>
   </div>
   <div style="display:flex;gap:10px;">
-    <div class="field" style="flex:1;"><label>Order in packs of</label><input id="pPack" type="number" inputmode="decimal" step="any" value="1"></div>
-    <div class="field" style="flex:1;"><label>Cost per unit</label><input id="pCost" type="number" inputmode="decimal" step="any"></div>
+    <div class="field" style="flex:1;"><label>Items per case/pack <span style="font-weight:400;">(1 if bought singly)</span></label><input id="pPack" type="number" inputmode="decimal" step="any" value="1" oninput="updPerItem()"><div class="hint" style="font-size:11px;margin-top:3px;">Par, reorder and on-hand are counted in ITEMS. Orders go out in whole cases of this size.</div></div>
+    <div class="field" style="flex:1;"><label>Price of one case/pack</label><input id="pCost" type="number" inputmode="decimal" step="any" oninput="updPerItem()"><div class="hint" id="pPerItem" style="font-size:11px;margin-top:3px;">If items per case is 1, this is the price of one item.</div></div>
   </div>
   <div class="field"><label>On hand right now</label><input id="pOnHand" type="number" inputmode="decimal" step="any"><div class="hint">Normally changed by Receive and Count — only type here to set a starting amount.</div></div>
   <div class="field"><label>Linked barcodes</label><div id="pBcList" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;"></div>
@@ -1693,6 +1698,8 @@ function avgWeeklyUse(p){
   return used/days*7;
 }
 function needsOrder(p){ return p.active && (p.onHand+p.onOrder) <= p.reorderPoint && p.par>0; }
+function lineCost(p,qty){ return (qty/Math.max(1,p.orderPack))*p.cost; } // cost = price of one case/pack when items-per-case > 1
+function casesText(p,qty){ return p.orderPack>1 ? ` = ${fmtQty(qty/p.orderPack)} case${qty/p.orderPack===1?'':'s'}` : ''; }
 function suggestQty(p){
   const need = Math.max(0, p.par - p.onHand - p.onOrder);
   return Math.max(p.orderPack, Math.ceil(need/p.orderPack)*p.orderPack);
@@ -1740,14 +1747,14 @@ function renderOrderTab(){
   const selected = orderRows().filter(r=>r.on);
   const byVendor = {};
   rows.forEach(r=>{ const v=r.p.vendor||'No vendor'; (byVendor[v]=byVendor[v]||[]).push(r); });
-  const total = selected.reduce((t,r)=>t+r.qty*r.p.cost,0);
+  const total = selected.reduce((t,r)=>t+lineCost(r.p,r.qty),0);
   let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
       <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;"><input type="checkbox" ${orderShowAll?'checked':''} onchange="orderShowAll=this.checked;renderSupplies()"> Show all products</label>
     </div>${supSearchBox()}`;
   if(!rows.length) html += `<div class="empty" style="padding:24px;"><div>Nothing needs ordering right now ✓</div><div class="hint" style="margin-top:6px;">Items show up here when what you have (plus what's on order) drops to the reorder point.</div></div>`;
   Object.keys(byVendor).sort().forEach(v=>{
     const vs = byVendor[v].filter(r=>r.on);
-    const vt = vs.reduce((t,r)=>t+r.qty*r.p.cost,0);
+    const vt = vs.reduce((t,r)=>t+lineCost(r.p,r.qty),0);
     html += `<div class="snap-card"><div class="snap-head"><div><div class="nm">${escapeHtml(v)}</div><div class="sub">${vs.length} item${vs.length!==1?'s':''} selected${vt?' · '+fmtMoney(vt):''}</div></div>
       <button class="export-btn" style="margin-left:auto;background:var(--gray-bg);color:var(--muted);" onclick="copyOrderText('${escapeHtml(v).replace(/'/g,'&#39;')}')">Copy</button></div>
       ${byVendor[v].map(r=>{ const p=r.p; const use=avgWeeklyUse(p);
@@ -1755,7 +1762,7 @@ function renderOrderTab(){
           <input type="checkbox" ${r.on?'checked':''} onchange="orderSel['${p.id}']=this.checked;renderSupplies()">
           <div style="flex:1;min-width:0;"><div class="id" style="font-size:13px;">${escapeHtml(p.name)}</div>
             <div class="model" style="font-size:11.5px;">${fmtQty(p.onHand)} on hand${p.onOrder?` · <b>${fmtQty(p.onOrder)} on order</b>`:''} · par ${fmtQty(p.par)} · reorder at ${fmtQty(p.reorderPoint)}${use!==null?` · uses ~${fmtQty(use)}/wk`:''}</div></div>
-          <div style="text-align:right;"><input type="number" inputmode="decimal" min="0" step="any" value="${r.qty}" style="width:64px;text-align:center;" oninput="orderQty['${p.id}']=parseFloat(this.value)||0;supUpdateOrderTotal()"><div class="model" style="font-size:11px;">${escapeHtml(p.unit)}</div></div>
+          <div style="text-align:right;"><input type="number" inputmode="decimal" min="0" step="any" value="${r.qty}" style="width:64px;text-align:center;" oninput="orderQty['${p.id}']=parseFloat(this.value)||0;supUpdateOrderTotal()"><div class="model" style="font-size:11px;">${escapeHtml(p.unit)}${casesText(p,r.qty)}</div></div>
         </div>`; }).join('')}</div>`;
   });
   html += `<div id="orderTotal" class="hint" style="margin:6px 0;font-weight:700;">${selected.length} item${selected.length!==1?'s':''} selected${total?' · est. '+fmtMoney(total):''}</div>
@@ -1766,7 +1773,7 @@ function renderOrderTab(){
   return html;
 }
 function supUpdateOrderTotal(){
-  const sel=orderRows().filter(r=>r.on); const t=sel.reduce((a,r)=>a+r.qty*r.p.cost,0);
+  const sel=orderRows().filter(r=>r.on); const t=sel.reduce((a,r)=>a+lineCost(r.p,r.qty),0);
   const el=document.getElementById('orderTotal'); if(el) el.textContent=`${sel.length} item${sel.length!==1?'s':''} selected${t?' · est. '+fmtMoney(t):''}`;
 }
 function orderText(vendorOnly){
@@ -1810,9 +1817,9 @@ function orderPrintHtml(){
   let grand=0;
   html += `<table class="val-table"><tr><th>Item</th><th>Item #</th><th class="r">Qty</th><th>Unit</th><th class="r">Est. cost</th></tr>`;
   Object.keys(g).sort().forEach(v=>{
-    const vt=g[v].reduce((t,r)=>t+r.qty*r.p.cost,0); grand+=vt;
+    const vt=g[v].reduce((t,r)=>t+lineCost(r.p,r.qty),0); grand+=vt;
     html += `<tr class="grp"><td colspan="4">${escapeHtml(v)}</td><td class="r">${vt?fmtMoney(vt):''}</td></tr>`;
-    g[v].forEach(r=>{ html += `<tr><td>${escapeHtml(r.p.name)}</td><td class="ids">${escapeHtml(r.p.vendorSku||'')}</td><td class="r">${fmtQty(r.qty)}</td><td>${escapeHtml(r.p.unit)}</td><td class="r">${r.p.cost?fmtMoney(r.qty*r.p.cost):'—'}</td></tr>`; });
+    g[v].forEach(r=>{ html += `<tr><td>${escapeHtml(r.p.name)}</td><td class="ids">${escapeHtml(r.p.vendorSku||'')}</td><td class="r">${fmtQty(r.qty)}</td><td>${escapeHtml(r.p.unit)}${casesText(r.p,r.qty)}</td><td class="r">${r.p.cost?fmtMoney(lineCost(r.p,r.qty)):'—'}</td></tr>`; });
   });
   html += `<tr class="tot"><td colspan="4">Estimated total</td><td class="r">${fmtMoney(grand)}</td></tr></table>`;
   return html;
@@ -1904,7 +1911,7 @@ async function commitCount(){
   const big = e.filter(x=>{ const p=products.find(q=>q.id===x.id); return p && Math.abs(p.onHand-x.qty) > Math.max(5, p.onHand*0.5); });
   if(big.length && !confirm(`Some counts are far from what was expected:\n\n${big.map(x=>{const p=products.find(q=>q.id===x.id);return `${p.name}: expected ${fmtQty(p.onHand)}, counted ${fmtQty(x.qty)}`;}).join('\n')}\n\nSave anyway?`)) return;
   const ok = await supMutate(()=>{ e.forEach(x=>{ const p=products.find(q=>q.id===x.id); if(!p) return; const before=p.onHand; p.onHand=x.qty; p.lastCountDate=todayStr(); logSupply('count', p, x.qty, before, x.qty, ''); }); });
-  if(ok){ countDraft={}; showToast(`Count saved — ${e.length} item${e.length!==1?'s':''}`); supTab='order'; renderSupplies(); }
+  if(ok){ countDraft={}; orderSel={}; orderQty={}; showToast(`Count saved — ${e.length} item${e.length!==1?'s':''}`); supTab='order'; renderSupplies(); }
 }
 
 // ----- PRODUCTS -----
@@ -1925,6 +1932,10 @@ function renderProductsTab(){
   if(recent.length) html += `<div class="section-title" style="margin-top:14px;">Recent supply activity</div><div class="snap-card">`+recent.map(l=>`<div class="snap-line" style="cursor:default;"><div class="snap-loc" style="flex-basis:70px;font-size:11.5px;">${fmtDate(String(l.ts).slice(0,10))}</div><div class="snap-ids">${escapeHtml({receive:'Received',count:'Counted',order:'Ordered'}[l.action]||l.action)} <b>${escapeHtml(l.name||'')}</b> — ${fmtQty(numOr(l.qty,0))}${l.action==='count'?` (expected ${fmtQty(numOr(l.before,0))})`:''}${l.who?' · '+escapeHtml(l.who):''}${l.ref?' · '+escapeHtml(l.ref):''}</div></div>`).join('')+`</div>`;
   return html;
 }
+function updPerItem(){
+  const c=parseFloat(document.getElementById('pCost').value)||0, n=Math.max(1,parseFloat(document.getElementById('pPack').value)||1);
+  const el=document.getElementById('pPerItem'); if(el) el.textContent = c&&n>1 ? `That works out to ${fmtMoney(c/n)} per item (${n} per case).` : 'If items per case is 1, this is the price of one item.';
+}
 function openProductEdit(id){
   editingProductId = id;
   const p = id ? products.find(x=>x.id===id) : null;
@@ -1932,7 +1943,7 @@ function openProductEdit(id){
   const set=(k,v)=>{ document.getElementById(k).value = v; };
   set('pName',p?p.name:''); set('pCategory',p?p.category:''); set('pUnit',p?p.unit:'each'); set('pVendor',p?p.vendor:'');
   set('pSku',p?p.vendorSku:''); set('pPar',p?p.par:''); set('pReorder',p?p.reorderPoint:''); set('pPack',p?p.orderPack:1);
-  set('pCost',p&&p.cost?p.cost:''); set('pOnHand',p?p.onHand:''); set('pNotes',p?p.notes:'');
+  set('pCost',p&&p.cost?p.cost:''); setTimeout(updPerItem,0); set('pOnHand',p?p.onHand:''); set('pNotes',p?p.notes:'');
   editingBarcodes = p ? p.barcodes.map(b=>Object.assign({},b)) : [];
   document.getElementById('pBcCode').value=''; document.getElementById('pBcQty').value='1';
   document.getElementById('prodRemoveBtn').style.display = p ? 'block' : 'none';
@@ -1959,6 +1970,7 @@ async function saveProduct(){
     cost:numOr(g('pCost'),0), notes:g('pNotes'), barcodes:editingBarcodes.slice() };
   const onHandTxt = g('pOnHand'); const id = editingProductId;
   if(!id && products.some(p=>p.active && p.name.toLowerCase()===name.toLowerCase())){ if(!confirm('A product with this name already exists. Add it anyway?')) return; }
+  if(id){ delete orderQty[id]; delete orderSel[id]; }
   const ok = await supMutate(()=>{
     let p = id ? products.find(x=>x.id===id) : null;
     if(!p){ p = normProduct({id:nextProductId(), active:true}); products.push(p); }
@@ -3639,8 +3651,16 @@ function openModal(id){ document.getElementById(id).classList.add('active'); }
 let printCleanupTimer = null;
 function runPrint(cls){
   document.body.classList.add(cls);
+  document.querySelectorAll('.print-target').forEach(e=>e.classList.remove('print-target'));
+  if(cls==='printing-overlay'){
+    // several sheets can be open at once (job page + report on top); print only the top one
+    const act=[...document.querySelectorAll('.overlay.active')];
+    act.sort((a,b)=>(parseInt(getComputedStyle(a).zIndex)||0)-(parseInt(getComputedStyle(b).zIndex)||0));
+    const top=act[act.length-1]; if(top) top.classList.add('print-target');
+  }
   const clear = ()=>{
     document.body.classList.remove(cls);
+    document.querySelectorAll('.print-target').forEach(e=>e.classList.remove('print-target'));
     clearTimeout(printCleanupTimer);
     window.removeEventListener('afterprint', clear);
   };
