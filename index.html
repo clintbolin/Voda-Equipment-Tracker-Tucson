@@ -613,6 +613,11 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
         <div class="t">Move equipment</div>
         <div class="d">Load a van, or move several at once</div>
       </button>
+      <button class="quick-btn" onclick="switchView('supplies')">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div class="t">Supplies</div>
+        <div class="d">Receive, count &amp; order</div>
+      </button>
       <button class="quick-btn" onclick="switchView('inventory')">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
         <div class="t">Find equipment</div>
@@ -675,6 +680,17 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openPrintView('jobs')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print this list</button></div>
     <input id="clientSearchInput" placeholder="Search clients…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;margin-bottom:12px;" oninput="renderClientsList()">
     <div id="clientsListBody"></div>
+  </div>
+
+  <!-- SUPPLIES -->
+  <div class="view" id="view-supplies">
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-top:0;">
+      <span>Supplies</span>
+      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="switchView('home')">← Home</button>
+    </div>
+    <div id="supBanner"></div>
+    <div class="chip-row" id="supTabs"></div>
+    <div id="supBody"></div>
   </div>
 
   <!-- REPORTS -->
@@ -1123,6 +1139,69 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
   <div id="printViewBody" class="fleet-report-doc"></div>
 </div></div>
 
+<!-- Supplies: add/edit product -->
+<div class="overlay" id="modalProduct"><div class="sheet" style="max-height:94vh;overflow:auto;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title" id="prodTitle">Product</div></div><button class="close-x" onclick="closeModal('modalProduct')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="field"><label>Product name</label><input id="pName" placeholder="e.g. Simple Green Concentrate"></div>
+  <div class="field"><label>Category</label><input id="pCategory" list="pCatList" placeholder="e.g. Chemicals"><datalist id="pCatList"></datalist></div>
+  <div class="field"><label>Counted / ordered in (unit)</label><input id="pUnit" list="pUnitList" placeholder="each, box, case, roll, gallon"><datalist id="pUnitList"><option value="each"><option value="box"><option value="case"><option value="roll"><option value="bottle"><option value="gallon"><option value="bag"><option value="pack"></datalist></div>
+  <div class="field"><label>Vendor</label><input id="pVendor" list="pVendorList" placeholder="e.g. ABC Supply"><datalist id="pVendorList"></datalist></div>
+  <div class="field"><label>Vendor item # (optional)</label><input id="pSku"></div>
+  <div style="display:flex;gap:10px;">
+    <div class="field" style="flex:1;"><label>Par (stocked up)</label><input id="pPar" type="number" inputmode="decimal" step="any"></div>
+    <div class="field" style="flex:1;"><label>Reorder at</label><input id="pReorder" type="number" inputmode="decimal" step="any"></div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <div class="field" style="flex:1;"><label>Order in packs of</label><input id="pPack" type="number" inputmode="decimal" step="any" value="1"></div>
+    <div class="field" style="flex:1;"><label>Cost per unit</label><input id="pCost" type="number" inputmode="decimal" step="any"></div>
+  </div>
+  <div class="field"><label>On hand right now</label><input id="pOnHand" type="number" inputmode="decimal" step="any"><div class="hint">Normally changed by Receive and Count — only type here to set a starting amount.</div></div>
+  <div class="field"><label>Linked barcodes</label><div id="pBcList" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;"></div>
+    <div style="display:flex;gap:6px;"><input id="pBcCode" placeholder="Type a barcode" style="flex:1;"><input id="pBcQty" type="number" value="1" min="1" style="width:64px;" title="Units per scan"><button class="export-btn" onclick="addProdBarcode()">Add</button></div>
+    <div class="hint">The number is how many units one scan counts (e.g. a case barcode = 12).</div></div>
+  <div class="field"><label>Notes</label><textarea id="pNotes"></textarea></div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="saveProduct()">Save</button></div>
+  <button id="prodRemoveBtn" class="btn btn-ghost" style="display:none;margin-top:8px;color:var(--red);" onclick="removeProduct()">Remove from list</button>
+</div></div>
+
+<!-- Supplies: receive an order (check off / scan) -->
+<div class="overlay" id="modalReceiveOrder"><div class="sheet" style="max-height:96vh;overflow:auto;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title" id="roTitle">Receive order</div><div class="sheet-sub" id="roSub">—</div></div><button class="close-x" onclick="closeModal('modalReceiveOrder')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="field" style="margin-bottom:8px;"><label>Your name</label><input id="roWho" list="supWhoList" placeholder="e.g. Miguel Perez" oninput="supWho=this.value;try{localStorage.setItem('voda-sup-who',supWho)}catch(e){}"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+    <button class="btn btn-primary" style="width:auto;padding:0 16px;" onclick="openScan('supRecvOrder')">Scan barcodes</button>
+    <button class="export-btn" onclick="roCheckAll()">Check everything off</button>
+    <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printOrderSheet(roOrderId)">Print checklist</button>
+  </div>
+  <div id="roProgress" style="font-weight:800;font-size:13.5px;margin-bottom:6px;"></div>
+  <div id="roList" class="snap-card"></div>
+  <div id="roShortWrap" class="field" style="display:none;margin-top:6px;"><label>Some items weren't delivered. What should happen to them?</label>
+    <select id="roShort"><option value="keep">Still expecting them — leave on order</option><option value="close">Close this order — don't expect the rest</option></select></div>
+  <div class="btn-row"><button class="btn btn-green" onclick="commitReceiveOrder()">Finish &amp; receive</button></div>
+</div></div>
+
+<!-- Supplies: link a new barcode -->
+<div class="overlay" id="modalLinkBarcode" style="z-index:240;"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title">New barcode</div><div class="sheet-sub">Which product is <b id="lbCode">—</b>? You only do this once.</div></div><button class="close-x" onclick="cancelLinkBarcode()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="field"><label>Units counted per scan</label><input id="lbQty" type="number" inputmode="decimal" value="1" min="1"><div class="hint">1 for a single item. If this is the barcode on a case of 12, enter 12.</div></div>
+  <input id="lbSearch" type="search" placeholder="Search products…" oninput="renderLinkList(this.value)" style="margin-bottom:8px;">
+  <div id="lbList" style="max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:10px;"></div>
+</div></div>
+
+<!-- Supplies: import list -->
+<div class="overlay" id="modalImportSupplies"><div class="sheet" style="max-height:94vh;overflow:auto;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title">Import product list</div><div class="sheet-sub">From Excel, Google Sheets or a CSV file</div></div><button class="close-x" onclick="closeModal('modalImportSupplies')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="hint" style="margin-bottom:8px;">Columns: Name, Category, Unit, Vendor, Vendor Item #, Par, Reorder Point, Order In Packs Of, Cost, On Hand, Barcode. Only Name is required. Use “Template” on the Products tab to see an example. Products with a name that already exists are updated, not duplicated.</div>
+  <div class="field"><label>Choose a CSV file</label><input type="file" accept=".csv,.txt,text/csv" onchange="impLoadFile(this)"></div>
+  <div class="field"><label>…or paste the rows here (include the top header row)</label><textarea id="impText" style="min-height:130px;" oninput="impPreview()"></textarea></div>
+  <div id="impPreview" class="hint" style="font-weight:700;margin-bottom:8px;"></div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="commitImportSupplies()">Import</button></div>
+</div></div>
+
 <!-- Same-day return: did it ever reach the job? -->
 <div class="overlay" id="modalSameDay" style="z-index:230;"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -1492,6 +1571,594 @@ async function apiPost(action, data){
   return res.json();
 }
 
+/* ============ SUPPLIES: products, receive, count, order sheet ============ */
+let products = [];          // [{id,name,category,unit,vendor,vendorSku,par,reorderPoint,orderPack,cost,onHand,onOrder,barcodes:[{code,qty}],active,lastCountDate,notes}]
+let supplyLog = [];         // [{ts,action,productId,name,qty,before,after,who,ref}]
+let backendSupportsSupplies = true;
+let orders = [];            // [{id,createdAt,createdBy,vendor,status:'open'|'received'|'closed',lines:[{productId,name,unit,sku,qty,received,shortBy}],receivedAt,note}]
+let roOrderId = null, roDraft = {};
+let pvOrderId = null;
+function normOrder(o){
+  let lines=o.lines; if(typeof lines==='string'){ try{ lines=JSON.parse(lines||'[]'); }catch(e){ lines=[]; } }
+  if(!Array.isArray(lines)) lines=[];
+  return { id:String(o.id||''), createdAt:String(o.createdAt||''), createdBy:String(o.createdBy||''), vendor:String(o.vendor||''),
+    status:String(o.status||'open'), receivedAt:String(o.receivedAt||''), note:String(o.note||''),
+    lines:lines.map(l=>({productId:String(l.productId||''),name:String(l.name||''),unit:String(l.unit||''),sku:String(l.sku||''),qty:numOr(l.qty,0),received:numOr(l.received,0),shortBy:numOr(l.shortBy,0)})) };
+}
+function ordersForSave(){ return orders.map(o=>Object.assign({},o,{lines:JSON.stringify(o.lines)})); }
+function nextOrderId(){ let m=0; orders.forEach(o=>{ const n=parseInt(String(o.id).replace(/\D/g,''),10); if(n>m) m=n; }); return 'O-'+String(m+1).padStart(4,'0'); }
+let supTab = 'order';
+let supSearch = '';
+let supWho = '';
+try{ supWho = localStorage.getItem('voda-sup-who') || ''; }catch(e){}
+let recvDraft = {};         // productId -> qty being received
+let recvRef = '';
+let countDraft = {};        // productId -> counted number (string while typing)
+let orderSel = {};          // productId -> true/false (overrides default)
+let orderQty = {};          // productId -> qty (overrides default)
+let orderShowAll = false;
+let linkPending = false, linkCode = '', linkAfter = '';
+let editingProductId = null, editingBarcodes = [];
+
+function numOr(v, d){ const n = parseFloat(String(v===undefined||v===null?'':v).replace(/[$,\s]/g,'')); return isNaN(n) ? d : n; }
+function normProduct(p){
+  let bc = p.barcodes;
+  if(typeof bc==='string'){ try{ bc = JSON.parse(bc||'[]'); }catch(e){ bc = []; } }
+  if(!Array.isArray(bc)) bc = [];
+  const act = !(p.active===false || String(p.active).toLowerCase()==='false' || String(p.active)==='0');
+  return {
+    id:String(p.id||''), name:String(p.name||''), category:String(p.category||''), unit:String(p.unit||'each'),
+    vendor:String(p.vendor||''), vendorSku:String(p.vendorSku||''),
+    par:numOr(p.par,0), reorderPoint:numOr(p.reorderPoint,0), orderPack:Math.max(1,numOr(p.orderPack,1)),
+    cost:numOr(p.cost,0), onHand:numOr(p.onHand,0), onOrder:numOr(p.onOrder,0),
+    barcodes:bc.map(b=>({code:String(b.code||'').toUpperCase(), qty:Math.max(1,numOr(b.qty,1))})).filter(b=>b.code),
+    active:act, lastCountDate:String(p.lastCountDate||''), notes:String(p.notes||'')
+  };
+}
+function productsForSave(){ return products.map(p=>Object.assign({},p,{barcodes:JSON.stringify(p.barcodes||[])})); }
+function activeProducts(){ return products.filter(p=>p.active).sort((a,b)=>(a.category||'zzz').localeCompare(b.category||'zzz')||a.name.localeCompare(b.name)); }
+function nextProductId(){ let m=0; products.forEach(p=>{ const n=parseInt(String(p.id).replace(/\D/g,''),10); if(n>m) m=n; }); return 'P-'+String(m+1).padStart(3,'0'); }
+function pName(id){ const p=products.find(x=>x.id===id); return p?p.name:id; }
+function fmtQty(n){ return (Math.round(n*100)/100).toString(); }
+
+// Re-read the latest products from the sheet right before every change, so two phones don't overwrite each other
+async function supMutate(fn){
+  setSyncing(true);
+  try{
+    if(BACKEND_READY){
+      const d = await apiGetAll();
+      if(d.products===undefined || d.orders===undefined){ throw new Error('backend-not-updated'); }
+      products = (d.products||[]).map(normProduct);
+      supplyLog = d.supplyLog||[];
+      orders = (d.orders||[]).map(normOrder);
+    }
+    fn();
+    if(BACKEND_READY){
+      let r = await apiPost('saveProducts', productsForSave()); if(r && r.error) throw new Error(r.error);
+      r = await apiPost('saveSupplyLog', supplyLog.slice(-3000)); if(r && r.error) throw new Error(r.error);
+      r = await apiPost('saveOrders', ordersForSave()); if(r && r.error) throw new Error(r.error);
+    }
+    setSyncing(false);
+    return true;
+  }catch(e){
+    console.error('supplies save failed', e); setSyncing(false, true);
+    showToast(String(e.message)==='backend-not-updated' ? 'Update your Google Sheets script first (Supplies needs it)' : 'Could not save — check your connection and try again');
+    return false;
+  }
+}
+function logSupply(action, p, qty, before, after, ref){
+  supplyLog.push({ts:new Date().toISOString(), action, productId:p.id, name:p.name, qty, before, after, who:supWho||'', ref:ref||''});
+}
+function avgWeeklyUse(p){
+  const c = supplyLog.filter(l=>l.productId===p.id && l.action==='count').sort((a,b)=>String(a.ts).localeCompare(String(b.ts)));
+  if(c.length<2) return null;
+  const used = c.slice(1).reduce((t,l)=>t+Math.max(0,numOr(l.before,0)-numOr(l.qty,0)),0);
+  const days = (new Date(c[c.length-1].ts)-new Date(c[0].ts))/86400000;
+  if(days<5) return null;
+  return used/days*7;
+}
+function needsOrder(p){ return p.active && (p.onHand+p.onOrder) <= p.reorderPoint && p.par>0; }
+function suggestQty(p){
+  const need = Math.max(0, p.par - p.onHand - p.onOrder);
+  return Math.max(p.orderPack, Math.ceil(need/p.orderPack)*p.orderPack);
+}
+function orderRows(){
+  return activeProducts().filter(p=> orderShowAll || needsOrder(p) || orderSel[p.id]===true).map(p=>({
+    p, on: orderSel[p.id]!==undefined ? orderSel[p.id] : needsOrder(p),
+    qty: orderQty[p.id]!==undefined ? orderQty[p.id] : suggestQty(p)
+  }));
+}
+
+/* ---------- rendering ---------- */
+function renderSupplies(){
+  const el = document.getElementById('supBody'); if(!el) return;
+  document.getElementById('supBanner').innerHTML = backendSupportsSupplies ? '' :
+    `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`;
+  const nOrder = products.filter(needsOrder).length;
+  document.getElementById('supTabs').innerHTML = [['order',`Order${nOrder?' ('+nOrder+')':''}`],['receive','Receive'],['count','Count'],['products','Products']]
+    .map(([k,l])=>`<div class="chip ${supTab===k?'active':''}" onclick="setSupTab('${k}')">${l}</div>`).join('');
+  if(supTab==='order') el.innerHTML = renderOrderTab();
+  else if(supTab==='receive') el.innerHTML = renderReceiveTab();
+  else if(supTab==='count') el.innerHTML = renderCountTab();
+  else el.innerHTML = renderProductsTab();
+}
+function setSupTab(t){ supTab=t; supSearch=''; renderSupplies(); }
+function supSearchBox(){
+  return `<input id="supSearchInput" type="search" placeholder="Search products…" value="${escapeHtml(supSearch)}" oninput="supSearch=this.value;renderSupplies();document.getElementById('supSearchInput').focus();" style="margin-bottom:8px;">`;
+}
+function supMatches(p){ return !supSearch || [p.name,p.category,p.vendor,p.vendorSku].join(' ').toLowerCase().includes(supSearch.toLowerCase()); }
+function whoField(){
+  return `<div class="field" style="margin-bottom:8px;"><label>Your name</label><input list="supWhoList" value="${escapeHtml(supWho)}" placeholder="e.g. Miguel Perez" oninput="supWho=this.value;try{localStorage.setItem('voda-sup-who',supWho)}catch(e){}"><datalist id="supWhoList">${personnel.map(n=>`<option value="${escapeHtml(n)}">`).join('')}</datalist></div>`;
+}
+function emptyProductsMsg(){
+  return `<div class="empty" style="padding:28px;"><div>No products yet</div><div class="hint" style="margin-top:6px;">Go to the Products tab to import your list or add one.</div></div>`;
+}
+function groupByCategory(list){
+  const g={}; list.forEach(p=>{ (g[p.category||'Other']=g[p.category||'Other']||[]).push(p); });
+  return Object.keys(g).sort().map(c=>({cat:c, items:g[c]}));
+}
+
+// ----- ORDER -----
+function renderOrderTab(){
+  if(!products.some(p=>p.active)) return emptyProductsMsg();
+  const rows = orderRows().filter(r=>supMatches(r.p));
+  const selected = orderRows().filter(r=>r.on);
+  const byVendor = {};
+  rows.forEach(r=>{ const v=r.p.vendor||'No vendor'; (byVendor[v]=byVendor[v]||[]).push(r); });
+  const total = selected.reduce((t,r)=>t+r.qty*r.p.cost,0);
+  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
+      <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;"><input type="checkbox" ${orderShowAll?'checked':''} onchange="orderShowAll=this.checked;renderSupplies()"> Show all products</label>
+    </div>${supSearchBox()}`;
+  if(!rows.length) html += `<div class="empty" style="padding:24px;"><div>Nothing needs ordering right now ✓</div><div class="hint" style="margin-top:6px;">Items show up here when what you have (plus what's on order) drops to the reorder point.</div></div>`;
+  Object.keys(byVendor).sort().forEach(v=>{
+    const vs = byVendor[v].filter(r=>r.on);
+    const vt = vs.reduce((t,r)=>t+r.qty*r.p.cost,0);
+    html += `<div class="snap-card"><div class="snap-head"><div><div class="nm">${escapeHtml(v)}</div><div class="sub">${vs.length} item${vs.length!==1?'s':''} selected${vt?' · '+fmtMoney(vt):''}</div></div>
+      <button class="export-btn" style="margin-left:auto;background:var(--gray-bg);color:var(--muted);" onclick="copyOrderText('${escapeHtml(v).replace(/'/g,'&#39;')}')">Copy</button></div>
+      ${byVendor[v].map(r=>{ const p=r.p; const use=avgWeeklyUse(p);
+        return `<div class="kit-row" style="align-items:flex-start;">
+          <input type="checkbox" ${r.on?'checked':''} onchange="orderSel['${p.id}']=this.checked;renderSupplies()">
+          <div style="flex:1;min-width:0;"><div class="id" style="font-size:13px;">${escapeHtml(p.name)}</div>
+            <div class="model" style="font-size:11.5px;">${fmtQty(p.onHand)} on hand${p.onOrder?` · <b>${fmtQty(p.onOrder)} on order</b>`:''} · par ${fmtQty(p.par)} · reorder at ${fmtQty(p.reorderPoint)}${use!==null?` · uses ~${fmtQty(use)}/wk`:''}</div></div>
+          <div style="text-align:right;"><input type="number" inputmode="decimal" min="0" step="any" value="${r.qty}" style="width:64px;text-align:center;" oninput="orderQty['${p.id}']=parseFloat(this.value)||0;supUpdateOrderTotal()"><div class="model" style="font-size:11px;">${escapeHtml(p.unit)}</div></div>
+        </div>`; }).join('')}</div>`;
+  });
+  html += `<div id="orderTotal" class="hint" style="margin:6px 0;font-weight:700;">${selected.length} item${selected.length!==1?'s':''} selected${total?' · est. '+fmtMoney(total):''}</div>
+    <div class="btn-row" style="gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="openPrintView('order')" ${selected.length?'':'disabled'}>Print / Save PDF</button>
+      <button class="btn btn-green" onclick="markOrdered()" ${selected.length?'':'disabled'}>Place order</button>
+    </div><div class="hint" style="margin-top:6px;">“Place order” saves these as an order (one per vendor) and marks them <b>on order</b> so they aren't ordered twice. When the delivery arrives, check it off on the Receive tab.</div>`;
+  return html;
+}
+function supUpdateOrderTotal(){
+  const sel=orderRows().filter(r=>r.on); const t=sel.reduce((a,r)=>a+r.qty*r.p.cost,0);
+  const el=document.getElementById('orderTotal'); if(el) el.textContent=`${sel.length} item${sel.length!==1?'s':''} selected${t?' · est. '+fmtMoney(t):''}`;
+}
+function orderText(vendorOnly){
+  const sel = orderRows().filter(r=>r.on && (!vendorOnly || (r.p.vendor||'No vendor')===vendorOnly));
+  const g={}; sel.forEach(r=>{ const v=r.p.vendor||'No vendor'; (g[v]=g[v]||[]).push(r); });
+  return Object.keys(g).sort().map(v=>`ORDER — ${v} (${fmtDate(todayStr())})\n`+g[v].map(r=>`${fmtQty(r.qty)} × ${r.p.name} (${r.p.unit})${r.p.vendorSku?' — item # '+r.p.vendorSku:''}`).join('\n')).join('\n\n');
+}
+async function copyOrderText(v){
+  const txt = orderText(v);
+  if(!txt){ showToast('Check at least one item first'); return; }
+  try{ await navigator.clipboard.writeText(txt); showToast('Order copied — paste it into an email or text'); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); showToast('Order copied');}catch(_){ showToast('Could not copy'); } ta.remove(); }
+}
+async function markOrdered(){
+  const sel = orderRows().filter(r=>r.on && r.qty>0);
+  if(!sel.length){ showToast('Check at least one item first'); return; }
+  const vendors=[...new Set(sel.map(r=>r.p.vendor||'No vendor'))];
+  if(!confirm(`Create ${vendors.length} order${vendors.length!==1?'s':''} (${vendors.join(', ')}) with ${sel.length} item${sel.length!==1?'s':''}?\n\nYou'll check items off against each order when it arrives.`)) return;
+  const picks = sel.map(r=>({id:r.p.id, qty:r.qty}));
+  let made=[];
+  const ok = await supMutate(()=>{
+    made=[];
+    vendors.forEach(v=>{
+      const o = normOrder({id:nextOrderId(), createdAt:new Date().toISOString(), createdBy:supWho||'', vendor:v, status:'open', lines:[]});
+      picks.forEach(x=>{ const p=products.find(q=>q.id===x.id); if(!p || (p.vendor||'No vendor')!==v) return;
+        o.lines.push({productId:p.id,name:p.name,unit:p.unit,sku:p.vendorSku,qty:x.qty,received:0,shortBy:0});
+        p.onOrder = p.onOrder + x.qty; logSupply('order', p, x.qty, p.onHand, p.onHand, 'Order '+o.id); });
+      orders.push(o); made.push(o);
+    });
+  });
+  if(ok){
+    orderSel={}; orderQty={}; supTab='receive'; renderSupplies();
+    showToast(`${made.length} order${made.length!==1?'s':''} created: ${made.map(o=>o.id).join(', ')}`);
+  }
+}
+function orderPrintHtml(){
+  const sel = orderRows().filter(r=>r.on && r.qty>0);
+  let html = pvLetterhead('Supply Order Sheet', `${sel.length} item${sel.length!==1?'s':''}`);
+  if(!sel.length) return html+'<p>Nothing selected.</p>';
+  const g={}; sel.forEach(r=>{ const v=r.p.vendor||'No vendor'; (g[v]=g[v]||[]).push(r); });
+  let grand=0;
+  html += `<table class="val-table"><tr><th>Item</th><th>Item #</th><th class="r">Qty</th><th>Unit</th><th class="r">Est. cost</th></tr>`;
+  Object.keys(g).sort().forEach(v=>{
+    const vt=g[v].reduce((t,r)=>t+r.qty*r.p.cost,0); grand+=vt;
+    html += `<tr class="grp"><td colspan="4">${escapeHtml(v)}</td><td class="r">${vt?fmtMoney(vt):''}</td></tr>`;
+    g[v].forEach(r=>{ html += `<tr><td>${escapeHtml(r.p.name)}</td><td class="ids">${escapeHtml(r.p.vendorSku||'')}</td><td class="r">${fmtQty(r.qty)}</td><td>${escapeHtml(r.p.unit)}</td><td class="r">${r.p.cost?fmtMoney(r.qty*r.p.cost):'—'}</td></tr>`; });
+  });
+  html += `<tr class="tot"><td colspan="4">Estimated total</td><td class="r">${fmtMoney(grand)}</td></tr></table>`;
+  return html;
+}
+
+// ----- RECEIVE -----
+function ordersSectionHTML(){
+  const open = orders.filter(o=>o.status==='open').sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  const done = orders.filter(o=>o.status!=='open').sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,5);
+  const card = o=>{ const got=o.lines.filter(l=>l.received>=l.qty).length;
+    return `<div class="snap-line" style="cursor:default;align-items:center;">
+      <div class="snap-loc" style="flex-basis:120px;">${escapeHtml(o.id)}<small>${escapeHtml(o.vendor)} · ${fmtDate(o.createdAt.slice(0,10))}</small></div>
+      <div class="snap-ids">${o.lines.length} item${o.lines.length!==1?'s':''}${o.status==='open'?` · ${got} complete`:` · <b>${o.status==='closed'?'closed short':'received in full'}</b>`}</div>
+      ${o.status==='open'?`<button class="export-btn" onclick="openReceiveOrder('${o.id}')">Receive</button>`:''}
+      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printOrderSheet('${o.id}')">Print</button></div>`; };
+  let html = `<div class="section-title" style="margin-top:0;">Open orders${open.length?' ('+open.length+')':''}</div>`;
+  html += open.length ? `<div class="snap-card">${open.map(card).join('')}</div>` : `<div class="hint" style="margin-bottom:8px;">No open orders. Create one on the Order tab with “Mark ordered” — it will show up here to check off when it arrives.</div>`;
+  if(done.length) html += `<div class="hint" style="margin:6px 0 2px;">Recent orders</div><div class="snap-card">${done.map(card).join('')}</div>`;
+  return html;
+}
+function printOrderSheet(id){ pvOrderId=id; openPrintView('po'); }
+function renderReceiveTab(){
+  const list = activeProducts();
+  if(!list.length) return emptyProductsMsg();
+  const onOrderCount = list.filter(p=>p.onOrder>0).length;
+  let html = ordersSectionHTML() + `<div class="section-title" style="margin-top:14px;">Receive without an order</div><div class="hint" style="margin-bottom:6px;">For anything that arrives that wasn't on an order sheet.</div>` + whoField() + `<div class="field" style="margin-bottom:8px;"><label>Invoice / PO # (optional)</label><input value="${escapeHtml(recvRef)}" oninput="recvRef=this.value"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn btn-primary" style="width:auto;padding:0 16px;" onclick="openScan('supRecv')">Scan barcodes</button>
+      ${onOrderCount?`<button class="export-btn" onclick="recvFillOnOrder()">Fill in everything on order (${onOrderCount})</button>`:''}
+    </div>${supSearchBox()}`;
+  groupByCategory(list.filter(supMatches)).forEach(g=>{
+    html += `<div class="section-title" style="margin-top:10px;">${escapeHtml(g.cat)}</div><div class="snap-card">`+g.items.map(p=>`
+      <div class="kit-row">
+        <div style="flex:1;min-width:0;"><div class="id" style="font-size:13px;">${escapeHtml(p.name)}</div>
+          <div class="model" style="font-size:11.5px;">${fmtQty(p.onHand)} on hand${p.onOrder?` · <b>${fmtQty(p.onOrder)} on order</b>`:''}</div></div>
+        <div style="text-align:right;"><input type="number" inputmode="decimal" min="0" step="any" id="rcv-${p.id}" value="${recvDraft[p.id]||''}" placeholder="0" style="width:64px;text-align:center;" oninput="recvDraft['${p.id}']=parseFloat(this.value)||0;supUpdateRecvTotal()"><div class="model" style="font-size:11px;">${escapeHtml(p.unit)}</div></div>
+      </div>`).join('')+`</div>`;
+  });
+  html += `<div id="recvTotal" class="hint" style="margin:8px 0;font-weight:700;"></div>
+    <div class="btn-row"><button class="btn btn-green" onclick="commitReceive()">Receive these items</button></div>`;
+  setTimeout(supUpdateRecvTotal,0);
+  return html;
+}
+function recvEntries(){ return Object.keys(recvDraft).filter(id=>recvDraft[id]>0).map(id=>({id, qty:recvDraft[id]})); }
+function supUpdateRecvTotal(){
+  const e=recvEntries(); const el=document.getElementById('recvTotal');
+  if(el) el.textContent = e.length ? `${e.length} item${e.length!==1?'s':''} · ${fmtQty(e.reduce((t,x)=>t+x.qty,0))} units to receive` : 'Type a quantity next to each product that arrived, or scan barcodes.';
+}
+function recvFillOnOrder(){ products.filter(p=>p.active&&p.onOrder>0).forEach(p=>{ recvDraft[p.id]=p.onOrder; }); renderSupplies(); }
+async function commitReceive(){
+  const e = recvEntries();
+  if(!e.length){ showToast('Enter at least one quantity'); return; }
+  if(!supWho.trim()){ showToast('Add your name first'); return; }
+  const summary = e.map(x=>`${fmtQty(x.qty)} × ${pName(x.id)}`).join('\n');
+  if(!confirm(`Receive these into inventory?\n\n${summary}`)) return;
+  const ref = recvRef.trim();
+  const ok = await supMutate(()=>{ e.forEach(x=>{ const p=products.find(q=>q.id===x.id); if(!p) return; const before=p.onHand; p.onHand=before+x.qty; p.onOrder=Math.max(0,p.onOrder-x.qty); logSupply('receive', p, x.qty, before, p.onHand, ref); }); });
+  if(ok){ recvDraft={}; recvRef=''; showToast(`${e.length} item${e.length!==1?'s':''} received`); renderSupplies(); }
+}
+
+// ----- COUNT -----
+function renderCountTab(){
+  const list = activeProducts();
+  if(!list.length) return emptyProductsMsg();
+  let html = whoField() + `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><button class="export-btn" onclick="openScan('supFind')">Scan to find a product</button><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openPrintView('countsheet')">Print count sheet</button></div>
+    <div class="hint" style="margin-bottom:6px;">Type what's actually on the shelf. Leave a product blank to skip it.</div>${supSearchBox()}`;
+  groupByCategory(list.filter(supMatches)).forEach(g=>{
+    html += `<div class="section-title" style="margin-top:10px;">${escapeHtml(g.cat)}</div><div class="snap-card">`+g.items.map(p=>`
+      <div class="kit-row">
+        <div style="flex:1;min-width:0;"><div class="id" style="font-size:13px;">${escapeHtml(p.name)}</div>
+          <div class="model" style="font-size:11.5px;">Expected ${fmtQty(p.onHand)}${p.lastCountDate?' · counted '+fmtDate(p.lastCountDate):' · never counted'}</div></div>
+        <div style="text-align:right;"><input type="number" inputmode="decimal" min="0" step="any" id="cnt-${p.id}" value="${countDraft[p.id]!==undefined?countDraft[p.id]:''}" placeholder="—" style="width:64px;text-align:center;" oninput="countDraft['${p.id}']=this.value;supUpdateCountTotal()"><div class="model" style="font-size:11px;">${escapeHtml(p.unit)}</div></div>
+      </div>`).join('')+`</div>`;
+  });
+  html += `<div id="countTotal" class="hint" style="margin:8px 0;font-weight:700;"></div>
+    <div class="btn-row"><button class="btn btn-green" onclick="commitCount()">Save count</button></div>`;
+  setTimeout(supUpdateCountTotal,0);
+  return html;
+}
+function countEntries(){ return Object.keys(countDraft).filter(id=>String(countDraft[id]).trim()!=='' && !isNaN(parseFloat(countDraft[id]))).map(id=>({id, qty:parseFloat(countDraft[id])})); }
+function supUpdateCountTotal(){
+  const e=countEntries(); const el=document.getElementById('countTotal'); const n=products.filter(p=>p.active).length;
+  if(el) el.textContent = `${e.length} of ${n} counted`;
+}
+async function commitCount(){
+  const e = countEntries();
+  if(!e.length){ showToast('Enter at least one count'); return; }
+  if(!supWho.trim()){ showToast('Add your name first'); return; }
+  const big = e.filter(x=>{ const p=products.find(q=>q.id===x.id); return p && Math.abs(p.onHand-x.qty) > Math.max(5, p.onHand*0.5); });
+  if(big.length && !confirm(`Some counts are far from what was expected:\n\n${big.map(x=>{const p=products.find(q=>q.id===x.id);return `${p.name}: expected ${fmtQty(p.onHand)}, counted ${fmtQty(x.qty)}`;}).join('\n')}\n\nSave anyway?`)) return;
+  const ok = await supMutate(()=>{ e.forEach(x=>{ const p=products.find(q=>q.id===x.id); if(!p) return; const before=p.onHand; p.onHand=x.qty; p.lastCountDate=todayStr(); logSupply('count', p, x.qty, before, x.qty, ''); }); });
+  if(ok){ countDraft={}; showToast(`Count saved — ${e.length} item${e.length!==1?'s':''}`); supTab='order'; renderSupplies(); }
+}
+
+// ----- PRODUCTS -----
+function renderProductsTab(){
+  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+    <button class="btn btn-primary" style="width:auto;padding:0 16px;" onclick="openProductEdit(null)">+ Add product</button>
+    <button class="export-btn" onclick="openImportSupplies()">Import from spreadsheet</button>
+    <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="downloadSupplyTemplate()">Template</button>
+    <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="openPrintView('productlist')">Print list</button></div>${supSearchBox()}`;
+  const list = activeProducts().filter(supMatches);
+  if(!products.some(p=>p.active)) return html + emptyProductsMsg();
+  groupByCategory(list).forEach(g=>{
+    html += `<div class="section-title" style="margin-top:10px;">${escapeHtml(g.cat)}</div><div class="snap-card">`+g.items.map(p=>`
+      <div class="snap-line" onclick="openProductEdit('${p.id}')"><div class="snap-loc" style="flex-basis:150px;">${escapeHtml(p.name)}<small>${escapeHtml(p.vendor||'no vendor')}</small></div>
+        <div class="snap-ids">${fmtQty(p.onHand)} ${escapeHtml(p.unit)} on hand · par ${fmtQty(p.par)} · reorder at ${fmtQty(p.reorderPoint)}${p.cost?' · '+fmtMoney(p.cost):''}</div></div>`).join('')+`</div>`;
+  });
+  const recent = supplyLog.slice(-20).reverse();
+  if(recent.length) html += `<div class="section-title" style="margin-top:14px;">Recent supply activity</div><div class="snap-card">`+recent.map(l=>`<div class="snap-line" style="cursor:default;"><div class="snap-loc" style="flex-basis:70px;font-size:11.5px;">${fmtDate(String(l.ts).slice(0,10))}</div><div class="snap-ids">${escapeHtml({receive:'Received',count:'Counted',order:'Ordered'}[l.action]||l.action)} <b>${escapeHtml(l.name||'')}</b> — ${fmtQty(numOr(l.qty,0))}${l.action==='count'?` (expected ${fmtQty(numOr(l.before,0))})`:''}${l.who?' · '+escapeHtml(l.who):''}${l.ref?' · '+escapeHtml(l.ref):''}</div></div>`).join('')+`</div>`;
+  return html;
+}
+function openProductEdit(id){
+  editingProductId = id;
+  const p = id ? products.find(x=>x.id===id) : null;
+  document.getElementById('prodTitle').textContent = p ? 'Edit product' : 'Add product';
+  const set=(k,v)=>{ document.getElementById(k).value = v; };
+  set('pName',p?p.name:''); set('pCategory',p?p.category:''); set('pUnit',p?p.unit:'each'); set('pVendor',p?p.vendor:'');
+  set('pSku',p?p.vendorSku:''); set('pPar',p?p.par:''); set('pReorder',p?p.reorderPoint:''); set('pPack',p?p.orderPack:1);
+  set('pCost',p&&p.cost?p.cost:''); set('pOnHand',p?p.onHand:''); set('pNotes',p?p.notes:'');
+  editingBarcodes = p ? p.barcodes.map(b=>Object.assign({},b)) : [];
+  document.getElementById('pBcCode').value=''; document.getElementById('pBcQty').value='1';
+  document.getElementById('prodRemoveBtn').style.display = p ? 'block' : 'none';
+  document.getElementById('pCatList').innerHTML = [...new Set(products.map(x=>x.category).filter(Boolean))].map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  document.getElementById('pVendorList').innerHTML = [...new Set(products.map(x=>x.vendor).filter(Boolean))].map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  renderProdBarcodes();
+  openModal('modalProduct');
+}
+function renderProdBarcodes(){
+  document.getElementById('pBcList').innerHTML = editingBarcodes.length
+    ? editingBarcodes.map((b,i)=>`<span class="vf-opt" onclick="editingBarcodes.splice(${i},1);renderProdBarcodes()">${escapeHtml(b.code)}${b.qty>1?' ×'+b.qty:''} ✕</span>`).join(' ')
+    : '<span class="hint">None linked yet — they link automatically the first time you scan one.</span>';
+}
+function addProdBarcode(){
+  const code=document.getElementById('pBcCode').value.trim().toUpperCase(); if(!code) return;
+  editingBarcodes.push({code, qty:Math.max(1,numOr(document.getElementById('pBcQty').value,1))});
+  document.getElementById('pBcCode').value=''; document.getElementById('pBcQty').value='1'; renderProdBarcodes();
+}
+async function saveProduct(){
+  const g=k=>document.getElementById(k).value.trim();
+  const name=g('pName'); if(!name){ showToast('Add a product name'); return; }
+  const data = { name, category:g('pCategory'), unit:g('pUnit')||'each', vendor:g('pVendor'), vendorSku:g('pSku'),
+    par:numOr(g('pPar'),0), reorderPoint:numOr(g('pReorder'),0), orderPack:Math.max(1,numOr(g('pPack'),1)),
+    cost:numOr(g('pCost'),0), notes:g('pNotes'), barcodes:editingBarcodes.slice() };
+  const onHandTxt = g('pOnHand'); const id = editingProductId;
+  if(!id && products.some(p=>p.active && p.name.toLowerCase()===name.toLowerCase())){ if(!confirm('A product with this name already exists. Add it anyway?')) return; }
+  const ok = await supMutate(()=>{
+    let p = id ? products.find(x=>x.id===id) : null;
+    if(!p){ p = normProduct({id:nextProductId(), active:true}); products.push(p); }
+    Object.assign(p, data);
+    if(onHandTxt!=='') p.onHand = numOr(onHandTxt, p.onHand);
+  });
+  if(ok){ closeModal('modalProduct'); renderSupplies(); showToast('Product saved'); }
+}
+async function removeProduct(){
+  const id=editingProductId; if(!id) return;
+  if(!confirm('Remove this product from your list? (Its history stays.)')) return;
+  const ok = await supMutate(()=>{ const p=products.find(x=>x.id===id); if(p) p.active=false; });
+  if(ok){ closeModal('modalProduct'); renderSupplies(); showToast('Product removed'); }
+}
+
+// ----- IMPORT / TEMPLATE -----
+const SUP_HEADERS = ['Name','Category','Unit','Vendor','Vendor Item #','Par','Reorder Point','Order In Packs Of','Cost','On Hand','Barcode'];
+function downloadSupplyTemplate(){
+  const rows = [SUP_HEADERS, ['Simple Green Concentrate','Chemicals','gallon','ABC Supply','SG-1001',12,4,4,18.5,8,''], ['6 mil Poly Sheeting Roll','Poly & Tape','roll','Home Depot','',10,3,1,64,5,'']];
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='Voda_Supply_List_Template.csv'; a.click();
+}
+function openImportSupplies(){ document.getElementById('impText').value=''; document.getElementById('impPreview').textContent=''; openModal('modalImportSupplies'); }
+function impLoadFile(inp){ const f=inp.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ document.getElementById('impText').value=r.result; impPreview(); }; r.readAsText(f); }
+function parseDelimited(text){
+  const delim = text.indexOf('\t')>=0 ? '\t' : ',';
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===delim){ row.push(cur); cur=''; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cur); cur=''; if(row.some(x=>x.trim()!=='')) rows.push(row); row=[]; }
+    else cur+=c;
+  }
+  row.push(cur); if(row.some(x=>x.trim()!=='')) rows.push(row);
+  return rows;
+}
+function impParse(){
+  const rows=parseDelimited(document.getElementById('impText').value||'');
+  if(rows.length<2) return {items:[],error:'Paste the rows from your spreadsheet, including the top header row.'};
+  const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+  const alias={name:['name','product','productname','item','description'],category:['category','type','group'],unit:['unit','uom','unitofmeasure'],vendor:['vendor','supplier'],
+    vendorSku:['vendoritem','vendoritem#','vendoritemnumber','sku','itemnumber','item#','vendorsku','partnumber'],par:['par','parlevel'],reorderPoint:['reorderpoint','reorder','min','minimum'],
+    orderPack:['orderinpacksof','packsize','pack','casesize','orderpack'],cost:['cost','price','unitcost','unitprice'],onHand:['onhand','qty','quantity','current','count'],barcode:['barcode','upc']};
+  const head=rows[0].map(norm); const idx={};
+  Object.keys(alias).forEach(k=>{ const i=head.findIndex(h=>alias[k].includes(h)); if(i>=0) idx[k]=i; });
+  if(idx.name===undefined) return {items:[],error:'Couldn\'t find a "Name" column in the first row.'};
+  const items=rows.slice(1).map(r=>{ const o={}; Object.keys(idx).forEach(k=>o[k]=(r[idx[k]]||'').trim()); return o; }).filter(o=>o.name);
+  return {items};
+}
+function impPreview(){
+  const r=impParse(); const el=document.getElementById('impPreview');
+  if(r.error){ el.textContent=r.error; return; }
+  const existing=new Set(products.map(p=>p.name.toLowerCase()));
+  const upd=r.items.filter(i=>existing.has(i.name.toLowerCase())).length;
+  el.textContent=`${r.items.length} products found — ${r.items.length-upd} new, ${upd} will update existing ones.`;
+}
+async function commitImportSupplies(){
+  const r=impParse(); if(r.error||!r.items.length){ showToast(r.error||'Nothing to import'); return; }
+  const ok = await supMutate(()=>{
+    r.items.forEach(i=>{
+      let p=products.find(x=>x.name.toLowerCase()===i.name.toLowerCase());
+      if(!p){ p=normProduct({id:nextProductId(), active:true, name:i.name}); products.push(p); }
+      p.active=true;
+      if(i.category!==undefined) p.category=i.category; if(i.unit) p.unit=i.unit; if(i.vendor!==undefined) p.vendor=i.vendor;
+      if(i.vendorSku!==undefined) p.vendorSku=i.vendorSku;
+      if(i.par!==undefined&&i.par!=='') p.par=numOr(i.par,0);
+      if(i.reorderPoint!==undefined&&i.reorderPoint!=='') p.reorderPoint=numOr(i.reorderPoint,0);
+      else if(i.par!==undefined&&i.par!==''&&!p.reorderPoint) p.reorderPoint=Math.round(numOr(i.par,0))/2; // about half of par, in half-unit steps
+      if(i.orderPack) p.orderPack=Math.max(1,numOr(i.orderPack,1));
+      if(i.cost!==undefined&&i.cost!=='') p.cost=numOr(i.cost,0);
+      if(i.onHand!==undefined&&i.onHand!=='') p.onHand=numOr(i.onHand,0);
+      if(i.barcode){ const code=i.barcode.toUpperCase(); if(!p.barcodes.some(b=>b.code===code)) p.barcodes.push({code,qty:1}); }
+    });
+  });
+  if(ok){ closeModal('modalImportSupplies'); renderSupplies(); showToast(`${r.items.length} products imported`); }
+}
+
+
+// ----- RECEIVE AN ORDER (check off / scan) -----
+function roLine(pid){ const o=orders.find(x=>x.id===roOrderId); return o && o.lines.find(l=>l.productId===pid); }
+function roRemaining(l){ return Math.max(0, l.qty - l.received); }
+function openReceiveOrder(id){
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  roOrderId=id; roDraft={};
+  document.getElementById('roTitle').textContent=`Receive ${o.id}`;
+  document.getElementById('roSub').textContent=`${o.vendor} · ordered ${fmtDate(o.createdAt.slice(0,10))}`;
+  document.getElementById('roWho').value=supWho;
+  renderRoList();
+  openModal('modalReceiveOrder');
+}
+function renderRoList(){
+  const o=orders.find(x=>x.id===roOrderId); if(!o) return;
+  document.getElementById('roList').innerHTML = o.lines.map(l=>{
+    const rem=roRemaining(l), d=roDraft[l.productId]||0, done = rem===0, full = !done && d>=rem;
+    return `<div class="kit-row" style="${full||done?'background:var(--green-bg,#e6f7ee);':''}">
+      <input type="checkbox" ${full||done?'checked':''} ${done?'disabled':''} onchange="roCheck('${l.productId}',this.checked)">
+      <div style="flex:1;min-width:0;"><div class="id" style="font-size:13px;">${escapeHtml(l.name)}</div>
+        <div class="model" style="font-size:11.5px;">${done?'<b>Already received in full</b>':`Ordered ${fmtQty(l.qty)} ${escapeHtml(l.unit)}${l.received?` · already got ${fmtQty(l.received)} · <b>${fmtQty(rem)} to go</b>`:''}`}${l.sku?' · #'+escapeHtml(l.sku):''}</div></div>
+      ${done?'':`<div style="text-align:right;"><input type="number" inputmode="decimal" min="0" step="any" value="${d||''}" placeholder="0" style="width:64px;text-align:center;" oninput="roQty('${l.productId}',this.value)" onchange="renderRoList()"><div class="model" style="font-size:11px;">received</div></div>`}
+    </div>`; }).join('');
+  roUpdateProgress();
+}
+function roCheck(pid,on){ const l=roLine(pid); if(!l) return; roDraft[pid]= on ? roRemaining(l) : 0; renderRoList(); }
+function roQty(pid,v){ roDraft[pid]=parseFloat(v)||0; roUpdateProgress(); }
+function roCheckAll(){ const o=orders.find(x=>x.id===roOrderId); if(!o) return; o.lines.forEach(l=>{ roDraft[l.productId]=roRemaining(l); }); renderRoList(); }
+function roStats(){
+  const o=orders.find(x=>x.id===roOrderId); if(!o) return {total:0,complete:0,short:0};
+  let complete=0, short=0;
+  o.lines.forEach(l=>{ const rem=roRemaining(l); if(rem===0 || (roDraft[l.productId]||0)>=rem) complete++; else short++; });
+  return {total:o.lines.length, complete, short};
+}
+function roUpdateProgress(){
+  const st=roStats(); const el=document.getElementById('roProgress');
+  if(el) el.innerHTML = `${st.complete} of ${st.total} items complete` + (st.short? ` · <span style="color:var(--amber);">${st.short} still to check off</span>` : ` · <span style="color:var(--green);">everything here ✓</span>`);
+  const w=document.getElementById('roShortWrap'); if(w) w.style.display = st.short ? 'block' : 'none';
+}
+function roScanTally(){ const st=roStats(); return `${escapeHtml(roOrderId||'')}: <b>${st.complete}</b> of ${st.total} items complete · ${st.short? `<span style="color:var(--amber);font-weight:700;">${st.short} still to scan</span>`:'<span style="color:var(--green);font-weight:700;">all here ✓</span>'}`; }
+async function commitReceiveOrder(){
+  const o=orders.find(x=>x.id===roOrderId); if(!o) return;
+  if(!supWho.trim()){ showToast('Add your name first'); return; }
+  const recv=o.lines.filter(l=>(roDraft[l.productId]||0)>0);
+  const shortLines=o.lines.filter(l=>roRemaining(l)-(roDraft[l.productId]||0)>0.0001);
+  const mode = shortLines.length ? document.getElementById('roShort').value : 'keep';
+  if(!recv.length && mode!=='close'){ showToast('Check off or scan at least one item'); return; }
+  const lines=[...recv.map(l=>`✓ ${fmtQty(roDraft[l.productId])} × ${l.name}`), ...shortLines.map(l=>`${mode==='close'?'✗ short':'… still expecting'}: ${fmtQty(roRemaining(l)-(roDraft[l.productId]||0))} × ${l.name}`)];
+  if(!confirm(`Finish receiving ${o.id}?\n\n${lines.join('\n')}`)) return;
+  const draft={...roDraft}, oid=o.id;
+  const ok = await supMutate(()=>{
+    const ord=orders.find(x=>x.id===oid); if(!ord) return;
+    ord.lines.forEach(l=>{
+      const q=draft[l.productId]||0; const p=products.find(x=>x.id===l.productId);
+      if(q>0 && p){ const before=p.onHand; p.onHand=before+q; l.received+=q; p.onOrder=Math.max(0,p.onOrder-q); logSupply('receive', p, q, before, p.onHand, 'Order '+oid); }
+      const rem=Math.max(0,l.qty-l.received);
+      if(mode==='close' && rem>0){ l.shortBy=rem; if(p) p.onOrder=Math.max(0,p.onOrder-rem); }
+    });
+    const allDone = ord.lines.every(l=>l.received>=l.qty);
+    if(allDone){ ord.status='received'; ord.receivedAt=todayStr(); }
+    else if(mode==='close'){ ord.status='closed'; ord.receivedAt=todayStr(); }
+    else ord.status='open';
+  });
+  if(ok){ roDraft={}; closeModal('modalReceiveOrder'); renderSupplies(); showToast(`${oid} received`); }
+}
+function poPrintHtml(){
+  const o=orders.find(x=>x.id===pvOrderId); if(!o) return '<p>Order not found.</p>';
+  let html = pvLetterhead(`Order ${escapeHtml(o.id)} — ${escapeHtml(o.vendor)}`, `ordered ${fmtDate(o.createdAt.slice(0,10))}${o.createdBy?' by '+escapeHtml(o.createdBy):''}`);
+  html += `<table class="val-table"><tr><th>Item</th><th>Item #</th><th class="r">Ordered</th><th>Unit</th><th style="text-align:center;">Rec'd ☐</th><th>Qty rec'd</th></tr>`;
+  o.lines.forEach(l=>{ const rem=roRemaining(l);
+    html += `<tr><td>${escapeHtml(l.name)}${l.received?`<br><span style="font-size:10.5px;color:#666;">already received ${fmtQty(l.received)}</span>`:''}</td><td class="ids">${escapeHtml(l.sku)}</td><td class="r">${fmtQty(l.qty)}</td><td>${escapeHtml(l.unit)}</td><td style="text-align:center;font-size:16px;">${rem===0?'✓':'☐'}</td><td style="width:70px;border-bottom:1px solid #999;"></td></tr>`; });
+  html += `</table><p style="margin-top:18px;font-size:12px;">Received by: ______________________ &nbsp;&nbsp; Date: ______________</p>`;
+  return html;
+}
+function countSheetPrintHtml(){
+  let html = pvLetterhead('Supply Count Sheet', 'write in what is on the shelf');
+  html += `<table class="val-table"><tr><th>Item</th><th>Unit</th><th class="r">Expected</th><th style="width:90px;">Counted</th></tr>`;
+  groupByCategory(activeProducts()).forEach(g=>{
+    html += `<tr class="grp"><td colspan="4">${escapeHtml(g.cat)}</td></tr>`;
+    g.items.forEach(p=>{ html += `<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.unit)}</td><td class="r">${fmtQty(p.onHand)}</td><td style="border-bottom:1px solid #999;"></td></tr>`; });
+  });
+  return html+`</table><p style="margin-top:18px;font-size:12px;">Counted by: ______________________ &nbsp;&nbsp; Date: ______________</p>`;
+}
+function productListPrintHtml(){
+  let html = pvLetterhead('Supply List & Pars', `${activeProducts().length} products`);
+  html += `<table class="val-table"><tr><th>Item</th><th>Vendor</th><th>Unit</th><th class="r">Par</th><th class="r">Reorder</th><th class="r">On hand</th></tr>`;
+  groupByCategory(activeProducts()).forEach(g=>{
+    html += `<tr class="grp"><td colspan="6">${escapeHtml(g.cat)}</td></tr>`;
+    g.items.forEach(p=>{ html += `<tr><td>${escapeHtml(p.name)}</td><td class="ids">${escapeHtml(p.vendor)}</td><td>${escapeHtml(p.unit)}</td><td class="r">${fmtQty(p.par)}</td><td class="r">${fmtQty(p.reorderPoint)}</td><td class="r">${fmtQty(p.onHand)}</td></tr>`; });
+  });
+  return html+'</table>';
+}
+
+// ----- BARCODE SCANNING -----
+function findProductByCode(code){
+  const c=code.trim().toUpperCase();
+  for(const p of products){ if(!p.active) continue; const b=p.barcodes.find(x=>x.code===c); if(b) return {p, qty:b.qty}; }
+  return null;
+}
+function supplyScan(code){
+  if(linkPending) return {ok:false, msg:'Finish linking the last barcode first'};
+  const hit = findProductByCode(code);
+  if(!hit){
+    openLinkBarcode(code.trim().toUpperCase(), scanMode==='supRecv' ? 'recv' : scanMode==='supRecvOrder' ? 'ro' : 'find');
+    return {ok:false, msg:`New barcode ${code} — choose which product it is`};
+  }
+  const {p, qty} = hit;
+  if(scanMode==='supRecvOrder'){
+    const l=roLine(p.id);
+    if(!l) return {ok:false, msg:`${p.name} isn't on this order`, it:{id:p.name,type:'not on this order',model:''}};
+    if(roRemaining(l)===0) return {ok:false, msg:`${p.name} was already received in full`, it:{id:p.name,type:'already received',model:''}};
+    roDraft[p.id]=(roDraft[p.id]||0)+qty;
+    const rem=roRemaining(l);
+    return {ok:true, note: roDraft[p.id]>rem?'more than ordered!':'checked off', it:{id:p.name,type:`+${fmtQty(qty)} ${p.unit}`,model:`${fmtQty(roDraft[p.id])} of ${fmtQty(rem)} received`}};
+  }
+  if(scanMode==='supRecv'){
+    recvDraft[p.id] = (recvDraft[p.id]||0) + qty;
+    return {ok:true, msg:'added', note:'added', it:{id:p.name, type:`+${fmtQty(qty)} ${p.unit}`, model:`Total this delivery: ${fmtQty(recvDraft[p.id])}`}};
+  }
+  // find (count): jump to that product's count box
+  focusCountRow(p.id);
+  return {ok:true, msg:p.name, it:{id:p.name,type:p.category||'',model:''}};
+}
+function focusCountRow(id){
+  if(supTab!=='count'){ supTab='count'; supSearch=''; renderSupplies(); }
+  setTimeout(()=>{ const el=document.getElementById('cnt-'+id); if(el){ el.scrollIntoView({block:'center'}); el.focus(); el.select&&el.select(); } },60);
+}
+function openLinkBarcode(code, after){
+  linkPending=true; linkCode=code; linkAfter=after;
+  document.getElementById('lbCode').textContent=code;
+  document.getElementById('lbQty').value='1'; document.getElementById('lbSearch').value='';
+  renderLinkList('');
+  openModal('modalLinkBarcode');
+}
+function renderLinkList(q){
+  q=(q||'').toLowerCase();
+  const list=activeProducts().filter(p=>!q||[p.name,p.category,p.vendor].join(' ').toLowerCase().includes(q));
+  document.getElementById('lbList').innerHTML = list.length ? list.map(p=>`<div class="kit-row" style="cursor:pointer;" onclick="linkBarcodeTo('${p.id}')"><div><div class="id" style="font-size:13px;">${escapeHtml(p.name)}</div><div class="model" style="font-size:11.5px;">${escapeHtml(p.category||'')} · ${escapeHtml(p.unit)}</div></div></div>`).join('') : '<div class="empty" style="padding:18px;">No matching products — add it on the Products tab first</div>';
+}
+function cancelLinkBarcode(){ linkPending=false; closeModal('modalLinkBarcode'); }
+async function linkBarcodeTo(pid){
+  const qty=Math.max(1,numOr(document.getElementById('lbQty').value,1)); const code=linkCode, after=linkAfter;
+  const ok = await supMutate(()=>{ const p=products.find(x=>x.id===pid); if(p && !p.barcodes.some(b=>b.code===code)) p.barcodes.push({code,qty}); });
+  linkPending=false; closeModal('modalLinkBarcode');
+  if(!ok) return;
+  const p=products.find(x=>x.id===pid);
+  if(after==='ro'){ if(roLine(pid)){ roDraft[pid]=(roDraft[pid]||0)+qty; showToast(`Linked to ${p.name} · +${fmtQty(qty)} ${p.unit}`); } else showToast(`Linked to ${p.name} — but it isn't on this order`); }
+  else if(after==='recv'){ recvDraft[pid]=(recvDraft[pid]||0)+qty; showToast(`Linked to ${p.name} · +${fmtQty(qty)} ${p.unit}`); }
+  else { showToast(`Linked to ${p.name}`); focusCountRow(pid); }
+  updateScanTally();
+}
+function supScanTally(){
+  const e=recvEntries(); if(!e.length) return 'Nothing received yet';
+  return `Received so far: <b>${e.length}</b> product${e.length!==1?'s':''} · ${e.map(x=>`${fmtQty(x.qty)} × ${escapeHtml(pName(x.id))}`).join(' · ')}`;
+}
+
 let backendSupportsClientInfo = true;
 async function loadData(silent){
   if(!BACKEND_READY){ renderSetupScreen(); return; }
@@ -1527,6 +2194,9 @@ async function loadData(silent){
       window._warnedNoLocationsBackend = true;
       showToast('Custom locations are saved on this device only — update your Apps Script backend to sync them');
     }
+
+    backendSupportsSupplies = data.products!==undefined && data.orders!==undefined;
+    if(backendSupportsSupplies){ products = (data.products||[]).map(normProduct); supplyLog = data.supplyLog||[]; orders = (data.orders||[]).map(normOrder); }
 
     jobsitesKnown = new Set();
     techsKnown = new Set(KNOWN_TECHS);
@@ -2899,7 +3569,7 @@ function activityPrintHtml(){
 }
 function openPrintView(kind){
   pvKind=kind;
-  const map={inventory:['Inventory Snapshot',inventoryPrintHtml],jobs:['Jobs List',jobsPrintHtml],activity:['Activity',activityPrintHtml]};
+  const map={inventory:['Inventory Snapshot',inventoryPrintHtml],jobs:['Jobs List',jobsPrintHtml],activity:['Activity',activityPrintHtml],order:['Order Sheet',orderPrintHtml],po:['Order Checklist',poPrintHtml],countsheet:['Count Sheet',countSheetPrintHtml],productlist:['Supply List',productListPrintHtml]};
   const [title,fn]=map[kind];
   document.getElementById('pvTitle').textContent=title;
   document.getElementById('printViewBody').innerHTML=fn();
@@ -2919,6 +3589,7 @@ function switchView(v){
   if(v==='inventory') renderInventory();
   if(v==='reports') renderReports();
   if(v==='jobs') renderClientsList();
+  if(v==='supplies') renderSupplies();
 }
 
 /* ============ DETAIL MODAL ============ */
@@ -3548,6 +4219,8 @@ function scanSet(){
 }
 function updateScanTally(){
   const el=document.getElementById('scanTally'); if(!el) return;
+  if(scanMode==='supRecv'){ el.className='scan-tally show'; el.innerHTML=supScanTally(); return; }
+  if(scanMode==='supRecvOrder'){ el.className='scan-tally show'; el.innerHTML=roScanTally(); return; }
   const set=scanSet();
   if(!set){ el.className='scan-tally'; el.innerHTML=''; return; }
   let html;
@@ -3702,11 +4375,14 @@ async function openScan(mode){
   if(lastResultEl){ lastResultEl.className = 'scan-last-result'; lastResultEl.innerHTML = ''; }
   updateScanTally();
   const statusTxt = document.getElementById('scanStatusTxt');
-  const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
+  const isContinuous = ['clientReturn','jobKit','bulkMove','supRecv','supRecvOrder'].includes(scanMode);
   const modeMsg = {
     clientReturn: 'Scan items one after another — they\'ll add to the return list as you go',
     jobKit: 'Scan items one after another — they\'ll add to this job kit as you go',
     bulkMove: 'Scan items one after another — they\'ll add to the move list as you go',
+    supRecv: 'Scan each product as it comes off the truck — every scan adds to this delivery',
+    supRecvOrder: 'Scan each product as it comes off the truck — it checks off on the order',
+    supFind: 'Scan a product to jump to it',
   }[scanMode] || 'Looking for a code…';
   if(typeof Html5Qrcode === 'undefined'){
     statusTxt.textContent = 'Camera scanner failed to load — use the code field below';
@@ -3731,6 +4407,8 @@ async function openScan(mode){
 }
 function closeScan(){
   closeModal('modalScan');
+  if(scanMode==='supRecv' && currentView==='supplies') renderSupplies();
+  if(scanMode==='supRecvOrder' && document.getElementById('modalReceiveOrder').classList.contains('active')) renderRoList();
   if(scannerInstance){
     const inst = scannerInstance;
     scannerInstance = null;
@@ -3753,6 +4431,7 @@ function playBeep(ok){
   }catch(e){ /* audio not available — visual + haptic feedback still cover it */ }
 }
 function handleContinuousScan(code){
+  if(linkPending) return; // a new-barcode window is open — wait until it's finished
   const now = Date.now();
   const clean = code.trim().toUpperCase();
   if(clean===lastScanCode && (now-lastScanTime)<SCAN_COOLDOWN_MS) return; // same label still in frame — ignore, camera keeps running
@@ -3797,7 +4476,7 @@ function manualLookup(){
   const code = document.getElementById('manualCode').value.trim();
   if(!code) return;
   document.getElementById('manualCode').value = '';
-  const isContinuous = ['clientReturn','jobKit','bulkMove'].includes(scanMode);
+  const isContinuous = ['clientReturn','jobKit','bulkMove','supRecv','supRecvOrder'].includes(scanMode);
   if(isContinuous){
     const result = lookupCode(code); // camera keeps running — this is just an alternate way to add one item
     showScanLastResult(result);
@@ -3808,6 +4487,7 @@ function manualLookup(){
   }
 }
 function lookupCode(code){
+  if(scanMode==='supRecv' || scanMode==='supRecvOrder' || scanMode==='supFind') return supplyScan(code);
   const clean = code.trim().toUpperCase();
   const it = inventory.find(i=>i.id.toUpperCase()===clean || (i.barcode||'').toUpperCase()===clean);
   if(!it){
