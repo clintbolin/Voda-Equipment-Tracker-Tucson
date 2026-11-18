@@ -772,6 +772,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <div style="display:flex;align-items:center;gap:13px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printFleetReport()" style="cursor:pointer;" title="Print report"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="saveFleetReport()" style="cursor:pointer;" title="Save as PDF to attach to email, Workiz, etc."><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <button class="export-btn" style="background:var(--green-bg,#E3F6EA);color:var(--green,#1E8E4E);" onclick="excelFleetReport()">Excel</button>
         <button class="close-x" onclick="closeModal('modalFleetReport')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
     </div>
@@ -1109,7 +1110,8 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div style="display:flex;align-items:center;gap:13px;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printClientFormalReport()" style="cursor:pointer;" title="Print report"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="saveClientFormalReport()" style="cursor:pointer;" title="Save as PDF to attach to email, Workiz, etc."><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <button class="close-x" onclick="closeClientFormalReport()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="export-btn" style="background:var(--green-bg,#E3F6EA);color:var(--green,#1E8E4E);" onclick="excelClientFormalReport()">Excel</button>
+        <button class="close-x" onclick="closeClientFormalReport()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
   </div>
   <div class="chip-row no-print" id="cfrOptions" style="margin-bottom:8px;"></div>
@@ -1140,6 +1142,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
     <div style="display:flex;align-items:center;gap:13px;">
       <button class="export-btn" onclick="printPrintView()">Print</button>
       <button class="export-btn" style="background:var(--blue-bg);color:var(--blue);" onclick="savePrintView()">Save PDF</button>
+      <button class="export-btn" style="background:var(--green-bg,#E3F6EA);color:var(--green,#1E8E4E);" onclick="excelPrintView()">Excel</button>
       <button class="close-x" onclick="closeModal('modalPrintView')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
   </div>
@@ -1717,7 +1720,7 @@ function orderRows(){
 /* ---------- rendering ---------- */
 function renderSupplies(){
   const el = document.getElementById('supBody'); if(!el) return;
-  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/17-E · cases</div>`;
+  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/17-F · cases + Excel</div>`;
   if(!backendSupportsSupplies) document.getElementById('supBanner').innerHTML = document.getElementById('supBanner').innerHTML.replace('__X__',
     `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`);
   const nOrder = products.filter(needsOrder).length;
@@ -3632,6 +3635,123 @@ function printPrintView(){
   runPrint('printing-overlay');
 }
 function savePrintView(){ downloadElementAsPDF('printViewBody', `Voda_${pvKind}_${todayStr()}.pdf`); }
+
+/* ============ EXCEL EXPORT ============
+   Turns any on-screen report (the same one you print) into a clean, formatted Excel file:
+   company header, section headings, tables with a shaded header row, $ amounts as real numbers,
+   frozen header, auto-sized columns and a print setup (fits to one page wide). */
+let excelLibLoaded = false;
+function loadExcelLib(){
+  return new Promise((resolve,reject)=>{
+    if(excelLibLoaded && window.ExcelJS){ resolve(); return; }
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    s.onload=()=>{ excelLibLoaded=true; resolve(); };
+    s.onerror=()=>reject(new Error('Excel library failed to load'));
+    document.head.appendChild(s);
+  });
+}
+function xlTxt(el){ return (el.innerText||el.textContent||'').replace(/\s+/g,' ').trim(); }
+function xlCellValue(t){
+  const m = t.match(/^\(?-?\$\s?([\d,]+(?:\.\d+)?)\)?$/);
+  if(m){ const n=parseFloat(m[1].replace(/,/g,'')); return {v:(/^\(|^-/.test(t)?-n:n), fmt:'$#,##0.00'}; }
+  if(/^-?[\d,]+(\.\d+)?$/.test(t) && !/^0\d/.test(t) && t.length<12){ return {v:parseFloat(t.replace(/,/g,'')), fmt:null}; }
+  return {v:t, fmt:null};
+}
+async function downloadElementAsExcel(elementId, filename, sheetName){
+  showToast('Preparing Excel file…');
+  try{
+    await loadExcelLib();
+    const root=document.getElementById(elementId);
+    const wb=new ExcelJS.Workbook(); wb.creator='Voda Cleaning & Restoration of Tucson'; wb.created=new Date();
+    const ws=wb.addWorksheet((sheetName||'Report').slice(0,30), {views:[{showGridLines:false}]});
+    const NAVY='FF0A1F3D', GREY='FFF1F4F7', LINE='FFD5DAE0';
+    const widths=[]; const note=(c,t)=>{ widths[c]=Math.max(widths[c]||8, Math.min(60, String(t).length+2)); };
+    let row=1, maxCols=1;
+    const textRow=(t,opt={})=>{
+      const r=ws.getRow(row++); const c=r.getCell(1); c.value=t;
+      c.font={name:'Calibri',size:opt.size||11,bold:!!opt.bold,color:{argb:opt.color||'FF1A1A1A'}};
+      if(opt.line){ for(let i=1;i<=Math.max(maxCols,6);i++){ r.getCell(i).border={bottom:{style:'medium',color:{argb:NAVY}}}; } }
+      if(opt.fill){ r.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:opt.fill}}; }
+      if(opt.h) r.height=opt.h;
+      return r;
+    };
+    const blank=()=>{ row++; };
+    const handleTable=(tb)=>{
+      const trs=[...tb.querySelectorAll('tr')]; if(!trs.length) return;
+      let headDone=false; let heads=[];
+      const tcols=Math.max(...trs.map(tr=>[...tr.children].reduce((n,c)=>n+(c.colSpan||1),0)));
+      maxCols=Math.max(maxCols,tcols);
+      trs.forEach(tr=>{
+        const cells=[...tr.children].filter(c=>/^(TD|TH)$/.test(c.tagName)); if(!cells.length) return;
+        const isHead = !headDone && (tr.parentElement.tagName==='THEAD' || cells.every(c=>c.tagName==='TH'));
+        const isSection = !isHead && (cells.length===1 || (cells[0].colSpan>1 && cells.length<=2));
+        const isTotal = tr.classList.contains('tot') || /^(estimated total|total|grand total)/i.test(xlTxt(cells[0]));
+        const r=ws.getRow(row++); let col=1;
+        cells.forEach(c=>{
+          const t=xlTxt(c); if(isSection && cells.length===2 && c===cells[1]) col=tcols; const cell=r.getCell(col); let val=xlCellValue(t);
+          if(isHead) heads[col]=t;
+          if(!isHead && typeof val.v==='number' && !val.fmt && !/qty|quantity|count|total|amount|cost|price|value|hours|days|items|^#$/i.test(heads[col]||'')) val={v:t,fmt:null};
+          cell.value = isHead? t : val.v; if(val.fmt && !isHead) cell.numFmt=val.fmt;
+          cell.alignment={vertical:'top',wrapText:true,horizontal:(typeof val.v==='number'&&!isHead)?'right':(isHead&&c.classList.contains('r')?'right':'left')};
+          cell.font={name:'Calibri',size:11,bold:isHead||isSection||isTotal,color:{argb:isHead?'FFFFFFFF':(isSection?NAVY:'FF1A1A1A')}};
+          cell.border={bottom:{style:'thin',color:{argb:LINE}}};
+          if(isHead) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};
+          else if(isSection) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:GREY}};
+          if(isTotal&&!isHead) cell.border={top:{style:'medium',color:{argb:NAVY}},bottom:{style:'thin',color:{argb:LINE}}};
+          if(!isSection||cells.length>1) note(col,t.length>40&&!isHead?40:t);
+          col+=Math.max(1,c.colSpan||1);
+        });
+        if(isSection){ for(let i=1;i<=tcols;i++){ r.getCell(i).fill={type:'pattern',pattern:'solid',fgColor:{argb:GREY}}; r.getCell(i).border={bottom:{style:'thin',color:{argb:LINE}}}; } }
+        if(isHead){ headDone=true; }
+      });
+      blank();
+    };
+    const walk=(node)=>{
+      [...node.children].forEach(el=>{
+        const tag=el.tagName, cls=el.className&&el.className.toString?el.className.toString():'';
+        if(el.classList.contains('no-print')||getComputedStyle(el).display==='none'||tag==='STYLE'||tag==='SCRIPT'||tag==='BUTTON'||tag==='SVG') return;
+        if(tag==='IMG'||tag==='svg') return;
+        if(tag==='TABLE'){ handleTable(el); return; }
+        if(/report-letterhead/.test(cls)){
+          const nm=el.querySelector('.report-co-name'), tt=el.querySelector('.report-doc-title');
+          textRow(nm?xlTxt(nm):'Voda Cleaning & Restoration of Tucson',{size:16,bold:true,color:NAVY});
+          if(tt) textRow(xlTxt(tt).toUpperCase(),{size:11,color:'FF6B7684',line:true});
+          blank(); return;
+        }
+        if(/report-meta|report-footer/.test(cls)){ textRow(xlTxt(el),{size:10,color:'FF6B7684'}); blank(); return; }
+        if(/report-h\b|section-title/.test(cls)||/^H[1-4]$/.test(tag)){ const t=xlTxt(el); if(t) textRow(t,{size:13,bold:true,color:NAVY,line:true}); return; }
+        if(/report-subh/.test(cls)){ const t=xlTxt(el); if(t) textRow(t,{size:11,bold:true}); return; }
+        if(tag==='UL'||tag==='OL'){ [...el.children].forEach(li=>{ const t=xlTxt(li); if(t) textRow('•  '+t); }); blank(); return; }
+        const kids=[...el.children].filter(k=>k.tagName!=='BR');
+        const hasBlock=kids.some(k=>/^(DIV|TABLE|UL|OL|H[1-6]|P|SECTION)$/.test(k.tagName));
+        if(hasBlock){ walk(el); return; }
+        const t=xlTxt(el); if(!t) return;
+        if(kids.length>=2 && kids.length<=6 && !/rpt-cols/.test(cls)){
+          const r=ws.getRow(row++); kids.forEach((k,i)=>{ const c=r.getCell(i+1); c.value=xlTxt(k); c.font={name:'Calibri',size:11,bold:i===0}; note(i+1,xlTxt(k)); });
+          maxCols=Math.max(maxCols,kids.length);
+        } else { textRow(t); }
+      });
+    };
+    walk(root);
+    // column widths + page setup
+    const n=Math.max(maxCols,widths.length-1,1);
+    for(let i=1;i<=n;i++) ws.getColumn(i).width=Math.max(10,Math.min(52,widths[i]||12));
+    ws.pageSetup={orientation:n>4?'landscape':'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:1,margins:{left:0.5,right:0.5,top:0.6,bottom:0.6,header:0.3,footer:0.3}};
+    ws.headerFooter={oddFooter:'&LVoda Cleaning & Restoration of Tucson&RPage &P of &N'};
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
+    showToast('Excel file downloaded');
+  }catch(e){ console.error(e); showToast('Could not make the Excel file — check your internet connection and try again'); }
+}
+function excelPrintView(){ downloadElementAsExcel('printViewBody', `Voda_${pvKind}_${todayStr()}.xlsx`, document.getElementById('pvTitle').textContent); }
+function excelFleetReport(){ downloadElementAsExcel('fleetReportBody', `Voda_Fleet_Report_${todayStr()}.xlsx`, 'Fleet Report'); }
+function excelClientFormalReport(){
+  const name=(currentClientName||'job').replace(/[^a-z0-9]+/gi,'_');
+  downloadElementAsExcel('clientFormalReportBody', `Voda_Job_Report_${name}_${todayStr()}.xlsx`, 'Job Report');
+}
 
 /* ============ NAV ============ */
 function switchView(v){
