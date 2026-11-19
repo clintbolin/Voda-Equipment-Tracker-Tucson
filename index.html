@@ -594,6 +594,7 @@ table.po-t .sku{ font-size:8.5pt; color:#555; margin-top:2px; }
 table.po-t .sub{ font-size:8.5pt; color:#666; }
 table.po-t td.q{ font-weight:700; font-size:11pt; white-space:nowrap; }
 table.po-t tr.grp td{ background:#F1F4F7; font-weight:700; color:#0A1F3D; font-size:10.5pt; }
+table.po-t tr.sub-r td{ border-bottom:none; padding-top:3px; padding-bottom:3px; }
 table.po-t tr.tot td{ border-top:1.5px solid #0A1F3D; font-weight:700; }
 table.po-t tr{ break-inside:avoid; }
 .po-box{ font-size:13pt; line-height:1; }
@@ -1752,7 +1753,7 @@ function orderRows(){
 function renderSupplies(){
   renderSupplyBanner();
   const el = document.getElementById('supBody'); if(!el) return;
-  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/19-A · orders</div>`;
+  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/19-B · orders + tax</div>`;
   if(!backendSupportsSupplies) document.getElementById('supBanner').innerHTML = document.getElementById('supBanner').innerHTML.replace('__X__',
     `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`);
   const nOrder = products.filter(needsOrder).length;
@@ -1850,6 +1851,12 @@ async function markOrdered(){
     if(made.length===1) setTimeout(()=>printOrderSheet(made[0].id,false),300);
   }
 }
+const SUPPLY_TAX_RATE = 0.086; // 8.6% sales tax, shown only on the internal copy with prices
+function taxRows(sub, leadCols, trailCols){
+  const tax=Math.round(sub*SUPPLY_TAX_RATE*100)/100, tot=Math.round((sub+tax)*100)/100;
+  const tr=(label,amt,cls)=>`<tr class="${cls}"><td colspan="${leadCols}">${label}</td><td class="r">${fmtMoney(amt)}</td>${'<td></td>'.repeat(trailCols)}</tr>`;
+  return tr('Subtotal',sub,'sub-r')+tr(`Sales tax (${(SUPPLY_TAX_RATE*100).toFixed(1)}%)`,tax,'sub-r')+tr('Estimated total with tax',tot,'tot');
+}
 function poLineCost(l){ const p=products.find(x=>x.id===l.productId); const c=(l.cost>=0)?l.cost:(p?p.cost:0); return l.qty*c; }
 function poItemCell(name,sku){ return `<div class="nm">${escapeHtml(name)}</div>${sku?`<div class="sku">Item # ${escapeHtml(sku)}</div>`:''}`; }
 function poUnitCell(unit,pack,qty){ return escapeHtml(unit||'')+(pack>1?`<div class="sub">${fmtQty(qty*pack)} items</div>`:''); }
@@ -1866,7 +1873,7 @@ function orderPrintHtml(){
     html += `<tr class="grp"><td colspan="3">${escapeHtml(v)}</td>${pr?`<td class="r">${vt?fmtMoney(vt):''}</td>`:''}<td></td></tr>`;
     g[v].forEach(r=>{ html += `<tr><td>${poItemCell(r.p.name,r.p.vendorSku)}</td><td class="r q">${fmtQty(r.qty)}</td><td>${poUnitCell(r.p.unit,r.p.orderPack,r.qty)}</td>${pr?`<td class="r">${r.p.cost?fmtMoney(lineCost(r.p,r.qty)):'—'}</td>`:''}<td></td></tr>`; });
   });
-  if(pr) html += `<tr class="tot"><td colspan="3">Estimated total</td><td class="r">${fmtMoney(grand)}</td><td></td></tr>`;
+  if(pr) html += taxRows(grand,3,1);
   return html+'</table>';
 }
 
@@ -2191,7 +2198,7 @@ function poPrintHtml(){
   html += `<table class="po-t"><tr><th>Item</th><th class="r">Qty</th><th>Unit</th>${pr?'<th class="r">Cost</th>':''}${bx?`<th class="c">Rec'd</th><th>Qty rec'd</th>`:''}</tr>`;
   o.lines.forEach(l=>{ const lc=poLineCost(l); tot+=lc;
     html += `<tr><td>${poItemCell(l.name,l.sku)}</td><td class="r q">${fmtQty(l.qty)}</td><td>${poUnitCell(l.unit,l.pack||1,l.qty)}</td>${pr?`<td class="r">${lc?fmtMoney(lc):'—'}</td>`:''}${bx?`<td class="c"><span class="po-box">${l.received>=l.qty?'☑':'☐'}</span></td><td>${l.received?`<span class="sub">got ${fmtQty(l.received)}</span>`:''}</td>`:''}</tr>`; });
-  if(pr) html += `<tr class="tot"><td colspan="3">Total</td><td class="r">${fmtMoney(tot)}</td>${bx?'<td></td><td></td>':''}</tr>`;
+  if(pr) html += taxRows(tot,3,bx?2:0);
   html += `</table>`;
   if(bx) html += `<div class="po-sign">Received by: ______________________ &nbsp;&nbsp; Date: ______________</div>`;
   return html;
