@@ -630,6 +630,7 @@ table.po-t tr{ break-inside:avoid; }
   <div class="view active" id="view-home">
     <div id="overdueBanner"></div>
     <div id="lowStockBanner"></div>
+    <div id="supplyBanner"></div>
     <div class="section-title">Quick actions</div>
     <div class="quick-grid">
       <button class="quick-btn primary" onclick="openScan()">
@@ -1749,8 +1750,9 @@ function orderRows(){
 
 /* ---------- rendering ---------- */
 function renderSupplies(){
+  renderSupplyBanner();
   const el = document.getElementById('supBody'); if(!el) return;
-  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/18-A · orders</div>`;
+  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/19-A · orders</div>`;
   if(!backendSupportsSupplies) document.getElementById('supBanner').innerHTML = document.getElementById('supBanner').innerHTML.replace('__X__',
     `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`);
   const nOrder = products.filter(needsOrder).length;
@@ -1877,14 +1879,33 @@ function ordersSectionHTML(tab){
   const card = o=>{ const got=o.lines.filter(l=>l.received>=l.qty).length;
     return `<div class="snap-line" style="cursor:default;align-items:center;">
       <div class="snap-loc" style="flex-basis:120px;">${escapeHtml(o.id)}<small>${escapeHtml(o.vendor)} · ${fmtDate(o.createdAt.slice(0,10))}</small></div>
-      <div class="snap-ids">${o.lines.length} item${o.lines.length!==1?'s':''}${o.status==='open'?` · ${got} complete`:` · <b>${o.status==='closed'?'closed short':'received in full'}</b>`}${o.note?' · note: '+escapeHtml(o.note):''}</div>
+      <div class="snap-ids">${o.lines.length} item${o.lines.length!==1?'s':''}${o.status==='open'?` · ${got} complete`:` · <b>${o.status==='cancelled'?'cancelled':o.status==='closed'?'closed short':'received in full'}</b>`}${o.note?' · note: '+escapeHtml(o.note):''}</div>
       ${o.status==='open'?`<button class="export-btn" onclick="openReceiveOrder('${o.id}')">Receive</button>`:''}
+      ${o.status==='open'&&!o.lines.some(l=>l.received>0)?`<button class="export-btn" style="background:var(--red-bg,#FBE9EC);color:var(--red,#C0392B);" onclick="cancelOrder('${o.id}')">Cancel</button>`:''}
+      ${o.status==='cancelled'?`<button class="export-btn" style="background:var(--red-bg,#FBE9EC);color:var(--red,#C0392B);" onclick="deleteOrder('${o.id}')">Delete</button>`:''}
       <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printOrderSheet('${o.id}',${forRecv})">Print</button></div>`; };
   let html = `<div class="section-title" style="margin-top:0;">Waiting to arrive${open.length?' ('+open.length+')':''}</div>`;
   html += open.length ? `<div class="snap-card">${open.map(card).join('')}</div>` : `<div class="hint" style="margin-bottom:8px;">Nothing waiting. When you place an order it stays here until you receive it.</div>`;
   if(done.length) html += `<div class="hint" style="margin:6px 0 2px;">Order history${ordersShowAllHist?'':' (latest 5)'}</div><div class="snap-card">${done.map(card).join('')}</div>`;
   if(allDone.length>5) html += `<div style="margin:4px 0 8px;"><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="ordersShowAllHist=!ordersShowAllHist;renderSupplies()">${ordersShowAllHist?'Show fewer':'Show all '+allDone.length+' past orders'}</button></div>`;
   return html;
+}
+async function cancelOrder(id){
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  if(o.lines.some(l=>l.received>0)){ alert('Part of this order was already received. Open it with Receive and choose to close it short instead.'); return; }
+  if(!confirm(`Cancel order ${o.id} (${o.vendor}, ${o.lines.length} item${o.lines.length!==1?'s':''})?\n\nNothing was received from it. Its items go back to needing an order, so you can build a new one. The cancelled order stays in your history until you delete it.`)) return;
+  const ok = await supMutate(()=>{
+    const ord=orders.find(x=>x.id===id); if(!ord || ord.status!=='open') return;
+    ord.lines.forEach(l=>{ const p=products.find(x=>x.id===l.productId); if(p){ p.onOrder=Math.max(0,p.onOrder-l.qty); logSupply('cancel',p,l.qty,p.onHand,p.onHand,'Order '+id); } });
+    ord.status='cancelled'; ord.receivedAt=todayStr();
+  });
+  if(ok){ orderSel={}; orderQty={}; renderSupplies(); showToast(`${id} cancelled — items are back on your Order list`); }
+}
+async function deleteOrder(id){
+  const o=orders.find(x=>x.id===id); if(!o || o.status!=='cancelled') return;
+  if(!confirm(`Delete cancelled order ${o.id} for good? This can't be undone.`)) return;
+  const ok = await supMutate(()=>{ orders = orders.filter(x=>!(x.id===id && x.status==='cancelled')); });
+  if(ok){ renderSupplies(); showToast(`${id} deleted`); }
 }
 function printOrderSheet(id,boxes){ pvOrderId=id; openPrintView('po'); pvRecvBoxes = (boxes===undefined)?true:!!boxes; renderPvOptions(); refreshPrintView(); }
 function renderReceiveTab(){
@@ -2163,7 +2184,7 @@ async function commitReceiveOrder(){
 }
 function poPrintHtml(){
   const o=orders.find(x=>x.id===pvOrderId); if(!o) return '<p>Order not found.</p>';
-  const stat = o.status==='open'?'waiting to arrive':(o.status==='closed'?'closed short':'received in full');
+  const stat = o.status==='open'?'waiting to arrive':(o.status==='cancelled'?'CANCELLED':(o.status==='closed'?'closed short':'received in full'));
   let html = pvLetterhead(`Order # ${escapeHtml(o.id)} — ${escapeHtml(o.vendor)}`, `ordered ${fmtDate(o.createdAt.slice(0,10))}${o.createdBy?' by '+escapeHtml(o.createdBy):''} · ${stat}`);
   if((o.note||'').trim()) html += `<div class="po-note"><b>Note to vendor</b><br>${escapeHtml(o.note)}</div>`;
   const pr=pvShowPrices, bx=pvRecvBoxes; let tot=0;
@@ -2440,6 +2461,25 @@ function renderStats(){
     </div>`;
   } else banner.innerHTML='';
   renderLowStockBanner(items);
+  renderSupplyBanner();
+}
+function renderSupplyBanner(){
+  const b=document.getElementById('supplyBanner'); if(!b) return;
+  if(!products.some(p=>p.active)){ b.innerHTML=''; return; }
+  const need=products.filter(needsOrder).length;
+  const open=orders.filter(o=>o.status==='open');
+  let parts=[];
+  if(need) parts.push(`<b>${need}</b> suppl${need===1?'y needs':'ies need'} ordering`);
+  if(open.length){
+    const oldest=open.map(o=>o.createdAt.slice(0,10)).sort()[0]; const days=Math.max(0,Math.round((new Date(todayStr())-new Date(oldest))/86400000));
+    parts.push(`<b>${open.length}</b> order${open.length===1?'':'s'} waiting to arrive${days>0?` (oldest placed ${days} day${days===1?'':'s'} ago)`:''}`);
+  }
+  if(!parts.length){ b.innerHTML=''; return; }
+  b.innerHTML=`<div class="banner banner-amber">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2.2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+    <span>Supplies: ${parts.join(' · ')}</span>
+    <button onclick="supTab='order';switchView('supplies')">Review</button>
+  </div>`;
 }
 function renderLowStockBanner(items){
   const banner = document.getElementById('lowStockBanner');
