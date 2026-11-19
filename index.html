@@ -573,6 +573,34 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
 .toast svg{width:15px;height:15px;stroke:var(--cyan);}
+
+/* ===== compact letter-size order sheets ===== */
+@page{ size:letter; margin:.5in; }
+.po-doc{ font-size:10pt; padding:16px 16px 18px; }
+.po-doc .report-letterhead{ padding-bottom:8px; gap:10px; margin-bottom:4px; }
+.po-doc .report-letterhead img{ width:34px; height:34px; border-radius:8px; }
+.po-doc .report-co-name{ font-size:13pt; }
+.po-doc .report-doc-title{ font-size:10.5pt; font-weight:700; color:#0A1F3D; letter-spacing:.3px; }
+.po-doc .report-meta{ font-size:9pt; margin-bottom:8px; }
+.po-doc .po-note{ border:1px solid #cfd5dc; background:#fafbfc; padding:6px 9px; font-size:9.5pt; margin:4px 0 10px; border-radius:4px; color:#1a1a1a; }
+.po-doc .po-note b{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.4px; color:#555; }
+table.po-t{ width:100%; border-collapse:collapse; font-size:10pt; font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif; color:#1a1a1a; }
+table.po-t th{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.4px; color:#555; border-bottom:1.5px solid #0A1F3D; padding:5px 7px; text-align:left; font-weight:700; }
+table.po-t td{ padding:6px 7px; border-bottom:1px solid #E2E6EB; vertical-align:top; line-height:1.35; color:#1a1a1a; }
+table.po-t th.r, table.po-t td.r{ text-align:right; }
+table.po-t th.c, table.po-t td.c{ text-align:center; }
+table.po-t .nm{ font-weight:600; }
+table.po-t .sku{ font-size:8.5pt; color:#555; margin-top:2px; }
+table.po-t .sub{ font-size:8.5pt; color:#666; }
+table.po-t td.q{ font-weight:700; font-size:11pt; white-space:nowrap; }
+table.po-t tr.grp td{ background:#F1F4F7; font-weight:700; color:#0A1F3D; font-size:10.5pt; }
+table.po-t tr.tot td{ border-top:1.5px solid #0A1F3D; font-weight:700; }
+table.po-t tr{ break-inside:avoid; }
+.po-box{ font-size:13pt; line-height:1; }
+.po-sign{ margin-top:16px; font-size:9.5pt; color:#1a1a1a; }
+.pv-options{ display:flex; gap:16px; flex-wrap:wrap; padding:2px 0 10px; font-size:13px; }
+.pv-options label{ display:flex; align-items:center; gap:6px; }
+@media print{ .toast{ display:none !important; } body.printing-overlay .po-doc{ padding:0 !important; } body.printing-overlay #modalPrintView .sheet-head, body.printing-overlay #modalPrintView .pv-options{ display:none !important; } }
 </style>
 </head>
 <body>
@@ -1146,6 +1174,7 @@ nav.bottom .navbtn.scanbtn{color:var(--cyan-dark);}
       <button class="close-x" onclick="closeModal('modalPrintView')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
   </div>
+  <div id="pvOptions" class="pv-options no-print"></div>
   <div id="printViewBody" class="fleet-report-doc"></div>
 </div></div>
 
@@ -1601,12 +1630,13 @@ let backendSupportsSupplies = true;
 let orders = [];            // [{id,createdAt,createdBy,vendor,status:'open'|'received'|'closed',lines:[{productId,name,unit,sku,qty,received,shortBy}],receivedAt,note}]
 let roOrderId = null, roDraft = {};
 let pvOrderId = null;
+let pvShowPrices = false, pvRecvBoxes = true, orderNote = '', ordersShowAllHist = false;
 function normOrder(o){
   let lines=o.lines; if(typeof lines==='string'){ try{ lines=JSON.parse(lines||'[]'); }catch(e){ lines=[]; } }
   if(!Array.isArray(lines)) lines=[];
   return { id:String(o.id||''), createdAt:String(o.createdAt||''), createdBy:String(o.createdBy||''), vendor:String(o.vendor||''),
     status:String(o.status||'open'), receivedAt:String(o.receivedAt||''), note:String(o.note||''),
-    lines:lines.map(l=>({productId:String(l.productId||''),name:String(l.name||''),unit:String(l.unit||''),sku:String(l.sku||''),qty:numOr(l.qty,0),received:numOr(l.received,0),shortBy:numOr(l.shortBy,0)})) };
+    lines:lines.map(l=>({productId:String(l.productId||''),name:String(l.name||''),unit:String(l.unit||''),sku:String(l.sku||''),qty:numOr(l.qty,0),received:numOr(l.received,0),shortBy:numOr(l.shortBy,0),cost:(l.cost===undefined||l.cost===null||l.cost==='')?-1:numOr(l.cost,0),pack:Math.max(1,numOr(l.pack,1))})) };
 }
 function ordersForSave(){ return orders.map(o=>Object.assign({},o,{lines:JSON.stringify(o.lines)})); }
 function nextOrderId(){ let m=0; orders.forEach(o=>{ const n=parseInt(String(o.id).replace(/\D/g,''),10); if(n>m) m=n; }); return 'O-'+String(m+1).padStart(4,'0'); }
@@ -1720,7 +1750,7 @@ function orderRows(){
 /* ---------- rendering ---------- */
 function renderSupplies(){
   const el = document.getElementById('supBody'); if(!el) return;
-  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/17-F · cases + Excel</div>`;
+  document.getElementById('supBanner').innerHTML = (backendSupportsSupplies ? '' : '__X__') + `<div class="hint" style="text-align:right;font-size:10px;opacity:.6;">App version 11/18-A · orders</div>`;
   if(!backendSupportsSupplies) document.getElementById('supBanner').innerHTML = document.getElementById('supBanner').innerHTML.replace('__X__',
     `<div class="job-alert red"><b class="h">Supplies can't save yet</b>Your Google Sheets script needs the Supplies update. Follow the update steps, then reload this app.</div>`);
   const nOrder = products.filter(needsOrder).length;
@@ -1755,7 +1785,7 @@ function renderOrderTab(){
   const byVendor = {};
   rows.forEach(r=>{ const v=r.p.vendor||'No vendor'; (byVendor[v]=byVendor[v]||[]).push(r); });
   const total = selected.reduce((t,r)=>t+lineCost(r.p,r.qty),0);
-  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
+  let html = (orders.length ? ordersSectionHTML('order') : '') + `<div class="section-title" style="margin-top:14px;">New order</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
       <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;"><input type="checkbox" ${orderShowAll?'checked':''} onchange="orderShowAll=this.checked;renderSupplies()"> Show all products</label>
     </div>${supSearchBox()}`;
   if(!rows.length) html += `<div class="empty" style="padding:24px;"><div>Nothing needs ordering right now ✓</div><div class="hint" style="margin-top:6px;">Items show up here when what you have (plus what's on order) drops to the reorder point.</div></div>`;
@@ -1773,10 +1803,11 @@ function renderOrderTab(){
         </div>`; }).join('')}</div>`;
   });
   html += `<div id="orderTotal" class="hint" style="margin:6px 0;font-weight:700;">${selected.length} item${selected.length!==1?'s':''} selected${total?' · est. '+fmtMoney(total):''}</div>
+    <div class="field" style="margin:6px 0;"><label>Note to vendor (optional — prints at the top of the order)</label><input id="orderNoteIn" value="${escapeHtml(orderNote)}" placeholder="e.g. deliver to the shop, call before arriving" oninput="orderNote=this.value"></div>
     <div class="btn-row" style="gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="openPrintView('order')" ${selected.length?'':'disabled'}>Print / Save PDF</button>
+      <button class="btn btn-primary" onclick="openPrintView('order')" ${selected.length?'':'disabled'}>Preview draft</button>
       <button class="btn btn-green" onclick="markOrdered()" ${selected.length?'':'disabled'}>Place order</button>
-    </div><div class="hint" style="margin-top:6px;">“Place order” saves these as an order (one per vendor) and marks them <b>on order</b> so they aren't ordered twice. When the delivery arrives, check it off on the Receive tab.</div>`;
+    </div><div class="hint" style="margin-top:6px;">“Place order” saves these as an order (one per vendor, each with its own order #) and marks them <b>on order</b> so they aren't ordered twice. The order stays under <b>Waiting to arrive</b> at the top until you check it in on the Receive tab, then it moves to history. You can reprint it any time.</div>`;
   return html;
 }
 function supUpdateOrderTotal(){
@@ -1804,55 +1835,63 @@ async function markOrdered(){
   const ok = await supMutate(()=>{
     made=[];
     vendors.forEach(v=>{
-      const o = normOrder({id:nextOrderId(), createdAt:new Date().toISOString(), createdBy:supWho||'', vendor:v, status:'open', lines:[]});
+      const o = normOrder({id:nextOrderId(), createdAt:new Date().toISOString(), createdBy:supWho||'', vendor:v, status:'open', note:orderNote, lines:[]});
       picks.forEach(x=>{ const p=products.find(q=>q.id===x.id); if(!p || (p.vendor||'No vendor')!==v) return;
-        o.lines.push({productId:p.id,name:p.name,unit:p.unit,sku:p.vendorSku,qty:x.qty,received:0,shortBy:0});
+        o.lines.push({productId:p.id,name:p.name,unit:p.unit,sku:p.vendorSku,qty:x.qty,received:0,shortBy:0,cost:p.cost,pack:p.orderPack});
         p.onOrder = p.onOrder + x.qty; logSupply('order', p, x.qty, p.onHand, p.onHand, 'Order '+o.id); });
       orders.push(o); made.push(o);
     });
   });
   if(ok){
-    orderSel={}; orderQty={}; supTab='receive'; renderSupplies();
+    orderSel={}; orderQty={}; orderNote=''; supTab='order'; renderSupplies();
     showToast(`${made.length} order${made.length!==1?'s':''} created: ${made.map(o=>o.id).join(', ')}`);
+    if(made.length===1) setTimeout(()=>printOrderSheet(made[0].id,false),300);
   }
 }
+function poLineCost(l){ const p=products.find(x=>x.id===l.productId); const c=(l.cost>=0)?l.cost:(p?p.cost:0); return l.qty*c; }
+function poItemCell(name,sku){ return `<div class="nm">${escapeHtml(name)}</div>${sku?`<div class="sku">Item # ${escapeHtml(sku)}</div>`:''}`; }
+function poUnitCell(unit,pack,qty){ return escapeHtml(unit||'')+(pack>1?`<div class="sub">${fmtQty(qty*pack)} items</div>`:''); }
 function orderPrintHtml(){
   const sel = orderRows().filter(r=>r.on && r.qty>0);
-  let html = pvLetterhead('Supply Order Sheet', `${sel.length} item${sel.length!==1?'s':''}`);
+  let html = pvLetterhead('Supply Order — DRAFT', `${sel.length} item${sel.length!==1?'s':''} · not placed yet (an order # is assigned when you press Place order)`);
+  if(orderNote.trim()) html += `<div class="po-note"><b>Note to vendor</b><br>${escapeHtml(orderNote)}</div>`;
   if(!sel.length) return html+'<p>Nothing selected.</p>';
   const g={}; sel.forEach(r=>{ const v=r.p.vendor||'No vendor'; (g[v]=g[v]||[]).push(r); });
-  let grand=0;
-  html += `<table class="val-table"><tr><th>Item</th><th>Item #</th><th class="r">Qty</th><th>Unit</th><th class="r">Est. cost</th></tr>`;
+  const pr=pvShowPrices; let grand=0;
+  html += `<table class="po-t"><tr><th>Item</th><th class="r">Qty</th><th>Unit</th>${pr?'<th class="r">Est. cost</th>':''}<th>Notes</th></tr>`;
   Object.keys(g).sort().forEach(v=>{
     const vt=g[v].reduce((t,r)=>t+lineCost(r.p,r.qty),0); grand+=vt;
-    html += `<tr class="grp"><td colspan="4">${escapeHtml(v)}</td><td class="r">${vt?fmtMoney(vt):''}</td></tr>`;
-    g[v].forEach(r=>{ html += `<tr><td>${escapeHtml(r.p.name)}</td><td class="ids">${escapeHtml(r.p.vendorSku||'')}</td><td class="r">${fmtQty(r.qty)}</td><td>${escapeHtml(r.p.unit)}${casesText(r.p,r.qty)}</td><td class="r">${r.p.cost?fmtMoney(lineCost(r.p,r.qty)):'—'}</td></tr>`; });
+    html += `<tr class="grp"><td colspan="3">${escapeHtml(v)}</td>${pr?`<td class="r">${vt?fmtMoney(vt):''}</td>`:''}<td></td></tr>`;
+    g[v].forEach(r=>{ html += `<tr><td>${poItemCell(r.p.name,r.p.vendorSku)}</td><td class="r q">${fmtQty(r.qty)}</td><td>${poUnitCell(r.p.unit,r.p.orderPack,r.qty)}</td>${pr?`<td class="r">${r.p.cost?fmtMoney(lineCost(r.p,r.qty)):'—'}</td>`:''}<td></td></tr>`; });
   });
-  html += `<tr class="tot"><td colspan="4">Estimated total</td><td class="r">${fmtMoney(grand)}</td></tr></table>`;
-  return html;
+  if(pr) html += `<tr class="tot"><td colspan="3">Estimated total</td><td class="r">${fmtMoney(grand)}</td><td></td></tr>`;
+  return html+'</table>';
 }
 
 // ----- RECEIVE -----
-function ordersSectionHTML(){
+function ordersSectionHTML(tab){
   const open = orders.filter(o=>o.status==='open').sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
-  const done = orders.filter(o=>o.status!=='open').sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,5);
+  const allDone = orders.filter(o=>o.status!=='open').sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  const done = ordersShowAllHist ? allDone : allDone.slice(0,5);
+  const forRecv = tab==='receive';
   const card = o=>{ const got=o.lines.filter(l=>l.received>=l.qty).length;
     return `<div class="snap-line" style="cursor:default;align-items:center;">
       <div class="snap-loc" style="flex-basis:120px;">${escapeHtml(o.id)}<small>${escapeHtml(o.vendor)} · ${fmtDate(o.createdAt.slice(0,10))}</small></div>
-      <div class="snap-ids">${o.lines.length} item${o.lines.length!==1?'s':''}${o.status==='open'?` · ${got} complete`:` · <b>${o.status==='closed'?'closed short':'received in full'}</b>`}</div>
+      <div class="snap-ids">${o.lines.length} item${o.lines.length!==1?'s':''}${o.status==='open'?` · ${got} complete`:` · <b>${o.status==='closed'?'closed short':'received in full'}</b>`}${o.note?' · note: '+escapeHtml(o.note):''}</div>
       ${o.status==='open'?`<button class="export-btn" onclick="openReceiveOrder('${o.id}')">Receive</button>`:''}
-      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printOrderSheet('${o.id}')">Print</button></div>`; };
-  let html = `<div class="section-title" style="margin-top:0;">Open orders${open.length?' ('+open.length+')':''}</div>`;
-  html += open.length ? `<div class="snap-card">${open.map(card).join('')}</div>` : `<div class="hint" style="margin-bottom:8px;">No open orders. Create one on the Order tab with “Mark ordered” — it will show up here to check off when it arrives.</div>`;
-  if(done.length) html += `<div class="hint" style="margin:6px 0 2px;">Recent orders</div><div class="snap-card">${done.map(card).join('')}</div>`;
+      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printOrderSheet('${o.id}',${forRecv})">Print</button></div>`; };
+  let html = `<div class="section-title" style="margin-top:0;">Waiting to arrive${open.length?' ('+open.length+')':''}</div>`;
+  html += open.length ? `<div class="snap-card">${open.map(card).join('')}</div>` : `<div class="hint" style="margin-bottom:8px;">Nothing waiting. When you place an order it stays here until you receive it.</div>`;
+  if(done.length) html += `<div class="hint" style="margin:6px 0 2px;">Order history${ordersShowAllHist?'':' (latest 5)'}</div><div class="snap-card">${done.map(card).join('')}</div>`;
+  if(allDone.length>5) html += `<div style="margin:4px 0 8px;"><button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="ordersShowAllHist=!ordersShowAllHist;renderSupplies()">${ordersShowAllHist?'Show fewer':'Show all '+allDone.length+' past orders'}</button></div>`;
   return html;
 }
-function printOrderSheet(id){ pvOrderId=id; openPrintView('po'); }
+function printOrderSheet(id,boxes){ pvOrderId=id; openPrintView('po'); pvRecvBoxes = (boxes===undefined)?true:!!boxes; renderPvOptions(); refreshPrintView(); }
 function renderReceiveTab(){
   const list = activeProducts();
   if(!list.length) return emptyProductsMsg();
   const onOrderCount = list.filter(p=>p.onOrder>0).length;
-  let html = ordersSectionHTML() + `<div class="section-title" style="margin-top:14px;">Receive without an order</div><div class="hint" style="margin-bottom:6px;">For anything that arrives that wasn't on an order sheet.</div>` + whoField() + `<div class="field" style="margin-bottom:8px;"><label>Invoice / PO # (optional)</label><input value="${escapeHtml(recvRef)}" oninput="recvRef=this.value"></div>
+  let html = ordersSectionHTML('receive') + `<div class="section-title" style="margin-top:14px;">Receive without an order</div><div class="hint" style="margin-bottom:6px;">For anything that arrives that wasn't on an order sheet.</div>` + whoField() + `<div class="field" style="margin-bottom:8px;"><label>Invoice / PO # (optional)</label><input value="${escapeHtml(recvRef)}" oninput="recvRef=this.value"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
       <button class="btn btn-primary" style="width:auto;padding:0 16px;" onclick="openScan('supRecv')">Scan barcodes</button>
       ${onOrderCount?`<button class="export-btn" onclick="recvFillOnOrder()">Fill in everything on order (${onOrderCount})</button>`:''}
@@ -2124,11 +2163,16 @@ async function commitReceiveOrder(){
 }
 function poPrintHtml(){
   const o=orders.find(x=>x.id===pvOrderId); if(!o) return '<p>Order not found.</p>';
-  let html = pvLetterhead(`Order ${escapeHtml(o.id)} — ${escapeHtml(o.vendor)}`, `ordered ${fmtDate(o.createdAt.slice(0,10))}${o.createdBy?' by '+escapeHtml(o.createdBy):''}`);
-  html += `<table class="val-table"><tr><th>Item</th><th>Item #</th><th class="r">Ordered</th><th>Unit</th><th style="text-align:center;">Rec'd ☐</th><th>Qty rec'd</th></tr>`;
-  o.lines.forEach(l=>{ const rem=roRemaining(l);
-    html += `<tr><td>${escapeHtml(l.name)}${l.received?`<br><span style="font-size:10.5px;color:#666;">already received ${fmtQty(l.received)}</span>`:''}</td><td class="ids">${escapeHtml(l.sku)}</td><td class="r">${fmtQty(l.qty)}</td><td>${escapeHtml(l.unit)}</td><td style="text-align:center;font-size:16px;">${rem===0?'✓':'☐'}</td><td style="width:70px;border-bottom:1px solid #999;"></td></tr>`; });
-  html += `</table><p style="margin-top:18px;font-size:12px;">Received by: ______________________ &nbsp;&nbsp; Date: ______________</p>`;
+  const stat = o.status==='open'?'waiting to arrive':(o.status==='closed'?'closed short':'received in full');
+  let html = pvLetterhead(`Order # ${escapeHtml(o.id)} — ${escapeHtml(o.vendor)}`, `ordered ${fmtDate(o.createdAt.slice(0,10))}${o.createdBy?' by '+escapeHtml(o.createdBy):''} · ${stat}`);
+  if((o.note||'').trim()) html += `<div class="po-note"><b>Note to vendor</b><br>${escapeHtml(o.note)}</div>`;
+  const pr=pvShowPrices, bx=pvRecvBoxes; let tot=0;
+  html += `<table class="po-t"><tr><th>Item</th><th class="r">Qty</th><th>Unit</th>${pr?'<th class="r">Cost</th>':''}${bx?`<th class="c">Rec'd</th><th>Qty rec'd</th>`:''}</tr>`;
+  o.lines.forEach(l=>{ const lc=poLineCost(l); tot+=lc;
+    html += `<tr><td>${poItemCell(l.name,l.sku)}</td><td class="r q">${fmtQty(l.qty)}</td><td>${poUnitCell(l.unit,l.pack||1,l.qty)}</td>${pr?`<td class="r">${lc?fmtMoney(lc):'—'}</td>`:''}${bx?`<td class="c"><span class="po-box">${l.received>=l.qty?'☑':'☐'}</span></td><td>${l.received?`<span class="sub">got ${fmtQty(l.received)}</span>`:''}</td>`:''}</tr>`; });
+  if(pr) html += `<tr class="tot"><td colspan="3">Total</td><td class="r">${fmtMoney(tot)}</td>${bx?'<td></td><td></td>':''}</tr>`;
+  html += `</table>`;
+  if(bx) html += `<div class="po-sign">Received by: ______________________ &nbsp;&nbsp; Date: ______________</div>`;
   return html;
 }
 function countSheetPrintHtml(){
@@ -3623,12 +3667,23 @@ function activityPrintHtml(){
   });
   return html+'</table>';
 }
+function pvMap(){ return {inventory:['Inventory Snapshot',inventoryPrintHtml],jobs:['Jobs List',jobsPrintHtml],activity:['Activity',activityPrintHtml],order:['Order Sheet',orderPrintHtml],po:['Order',poPrintHtml],countsheet:['Count Sheet',countSheetPrintHtml],productlist:['Supply List',productListPrintHtml]}; }
+function renderPvOptions(){
+  const el=document.getElementById('pvOptions'); if(!el) return;
+  el.innerHTML = (pvKind==='order'||pvKind==='po') ?
+    `<label><input type="checkbox" ${pvShowPrices?'checked':''} onchange="pvShowPrices=this.checked;refreshPrintView()"> Show prices (our copy only)</label>`+
+    (pvKind==='po'?`<label><input type="checkbox" ${pvRecvBoxes?'checked':''} onchange="pvRecvBoxes=this.checked;refreshPrintView()"> Receiving checkboxes</label>`:'') : '';
+}
+function refreshPrintView(){
+  const body=document.getElementById('printViewBody'); const [title,fn]=pvMap()[pvKind];
+  body.className = 'fleet-report-doc' + ((pvKind==='order'||pvKind==='po')?' po-doc':'');
+  body.innerHTML=fn();
+}
 function openPrintView(kind){
-  pvKind=kind;
-  const map={inventory:['Inventory Snapshot',inventoryPrintHtml],jobs:['Jobs List',jobsPrintHtml],activity:['Activity',activityPrintHtml],order:['Order Sheet',orderPrintHtml],po:['Order Checklist',poPrintHtml],countsheet:['Count Sheet',countSheetPrintHtml],productlist:['Supply List',productListPrintHtml]};
-  const [title,fn]=map[kind];
+  pvKind=kind; pvShowPrices=false; pvRecvBoxes=true;
+  const [title,fn]=pvMap()[kind];
   document.getElementById('pvTitle').textContent=title;
-  document.getElementById('printViewBody').innerHTML=fn();
+  renderPvOptions(); refreshPrintView();
   openModal('modalPrintView');
 }
 function printPrintView(){
@@ -3651,6 +3706,7 @@ function loadExcelLib(){
     document.head.appendChild(s);
   });
 }
+function xlCellTxt(el){ return (el.innerText||el.textContent||'').split('\n').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean).join('\n'); }
 function xlTxt(el){ return (el.innerText||el.textContent||'').replace(/\s+/g,' ').trim(); }
 function xlCellValue(t){
   const m = t.match(/^\(?-?\$\s?([\d,]+(?:\.\d+)?)\)?$/);
@@ -3689,9 +3745,9 @@ async function downloadElementAsExcel(elementId, filename, sheetName){
         const isTotal = tr.classList.contains('tot') || /^(estimated total|total|grand total)/i.test(xlTxt(cells[0]));
         const r=ws.getRow(row++); let col=1;
         cells.forEach(c=>{
-          const t=xlTxt(c); if(isSection && cells.length===2 && c===cells[1]) col=tcols; const cell=r.getCell(col); let val=xlCellValue(t);
+          const t=xlCellTxt(c); if(isSection && cells.length===2 && c===cells[1]) col=tcols; const cell=r.getCell(col); let val=xlCellValue(t);
           if(isHead) heads[col]=t;
-          if(!isHead && typeof val.v==='number' && !val.fmt && !/qty|quantity|count|total|amount|cost|price|value|hours|days|items|^#$/i.test(heads[col]||'')) val={v:t,fmt:null};
+          if(!isHead && typeof val.v==='number' && !val.fmt && !/qty|quantity|count|total|amount|cost|price|value|hours|days|items|ordered|^#$/i.test(heads[col]||'')) val={v:t,fmt:null};
           cell.value = isHead? t : val.v; if(val.fmt && !isHead) cell.numFmt=val.fmt;
           cell.alignment={vertical:'top',wrapText:true,horizontal:(typeof val.v==='number'&&!isHead)?'right':(isHead&&c.classList.contains('r')?'right':'left')};
           cell.font={name:'Calibri',size:11,bold:isHead||isSection||isTotal,color:{argb:isHead?'FFFFFFFF':(isSection?NAVY:'FF1A1A1A')}};
@@ -3699,7 +3755,7 @@ async function downloadElementAsExcel(elementId, filename, sheetName){
           if(isHead) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};
           else if(isSection) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:GREY}};
           if(isTotal&&!isHead) cell.border={top:{style:'medium',color:{argb:NAVY}},bottom:{style:'thin',color:{argb:LINE}}};
-          if(!isSection||cells.length>1) note(col,t.length>40&&!isHead?40:t);
+          if(!isSection||cells.length>1) note(col,(t.split('\n').sort((a,b)=>b.length-a.length)[0]||'').slice(0,40));
           col+=Math.max(1,c.colSpan||1);
         });
         if(isSection){ for(let i=1;i<=tcols;i++){ r.getCell(i).fill={type:'pattern',pattern:'solid',fgColor:{argb:GREY}}; r.getCell(i).border={bottom:{style:'thin',color:{argb:LINE}}}; } }
