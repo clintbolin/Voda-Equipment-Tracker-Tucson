@@ -2331,6 +2331,7 @@ async function loadData(silent){
       if(it.tech) techsKnown.add(it.tech);
     });
     personnel.forEach(p=>techsKnown.add(p));
+    Object.keys(clientAddresses).forEach(n=>jobsitesKnown.add(n)); // customers the Job Tracker sent over show up in the pick list before any equipment goes out
 
     lastLoadOk = true;
     setSyncing(false);
@@ -3967,7 +3968,7 @@ function openCheckout(id){
     document.getElementById('outReturn').value = addDays(lb ? 30 : 4);
     document.getElementById('outLockChips').style.display = lb ? 'block' : 'none'; }
   document.getElementById('outNotes').value = '';
-  document.getElementById('jobsiteList').innerHTML = [...jobsitesKnown].map(j=>`<option value="${j}">`).join('');
+  document.getElementById('jobsiteList').innerHTML = [...new Set([...jobsitesKnown, ...Object.keys(clientAddresses)])].sort((a,b)=>a.localeCompare(b)).map(j=>`<option value="${escapeHtml(j)}">`).join('');
   document.getElementById('techList').innerHTML = [...techsKnown].map(t=>`<option value="${t}">`).join('');
   closeModal('modalDetail');
   openModal('modalOut');
@@ -4375,7 +4376,7 @@ async function openJobKit(returnToClient){
   document.getElementById('kitReturn').value = addDays(4);
   document.getElementById('kitLockReturn').value = addDays(30);
   document.getElementById('kitNotes').value = '';
-  document.getElementById('jobsiteList2').innerHTML = [...jobsitesKnown].map(j=>`<option value="${j}">`).join('');
+  document.getElementById('jobsiteList2').innerHTML = [...new Set([...jobsitesKnown, ...Object.keys(clientAddresses)])].sort((a,b)=>a.localeCompare(b)).map(j=>`<option value="${escapeHtml(j)}">`).join('');
   document.getElementById('techList2').innerHTML = [...techsKnown].map(t=>`<option value="${t}">`).join('');
   renderKitList('');
   openModal('modalKit');
