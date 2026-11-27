@@ -2291,16 +2291,30 @@ async function loadData(silent){
   if(!silent) setSyncing(true);
   try{
     const data = await apiGetAll();
-    if(data.inventory && data.inventory.length){
+    // SAFETY (Nov 2026): if Google answers with an error, or anything that
+    // isn't a real equipment list, stop here and change NOTHING. Before this
+    // check, a bad answer made the app replace the whole equipment list (and
+    // the personnel list) with the old starter list and save it over the
+    // real data.
+    if(!data || data.error || !Array.isArray(data.inventory)){
+      throw new Error('Backend sent an unexpected answer' + (data && data.error ? ' (' + data.error + ')' : ''));
+    }
+    if(data.inventory.length){
       inventory = data.inventory;
-    } else if(!silent){
-      inventory = SEED;
-      await saveInventory();
+    } else if(!silent && !window._warnedEmptyInventory){
+      // An empty list is never replaced with starter data automatically.
+      window._warnedEmptyInventory = true;
+      showToast('No equipment came back from the Google Sheet — nothing was changed. Refresh to try again.');
     }
     activityLog = data.activity || [];
     purgeExpiredDeletes();
-    personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
-    if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
+    if(Array.isArray(data.personnel) && data.personnel.length){
+      personnel = data.personnel;
+    } else if(Array.isArray(data.personnel)){
+      // First-time setup only: the sheet answered properly and simply has no names yet.
+      personnel = [...KNOWN_TECHS];
+      await savePersonnel();
+    }
     clientAddresses = {};
     backendSupportsClientInfo = data.clients!==undefined;
     if(!backendSupportsClientInfo){
